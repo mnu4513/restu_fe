@@ -5,6 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import { BackendAPI } from "@/utils/api";
+import CartItem from "@/components/CartItem";
 
 export default function Cart() {
   const { cart, updateQty, removeFromCart, clearCart } = useContext(CartContext);
@@ -194,60 +195,30 @@ export default function Cart() {
       </div>
 
       {/* ✅ Cart Section */}
-      {cart.length === 0 ? (
-        <p>Your cart is empty 🛒</p>
-      ) : (
-        <div>
-          {cart.map((item) => (
-            <div key={item._id} className="flex items-center justify-between border-b py-4">
-              <div>
-                <h3 className="font-semibold">{item.name}</h3>
-                <p>₹{item.price} × {item.quantity}</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => updateQty(item._id, item.quantity - 1)}
-                  disabled={item.quantity <= 1}
-                  className="px-2 bg-gray-300 rounded"
-                >
-                  -
-                </button>
-                <span>{item.quantity}</span>
-                <button
-                  onClick={() => updateQty(item._id, item.quantity + 1)}
-                  className="px-2 bg-gray-300 rounded"
-                >
-                  +
-                </button>
-                <button
-                  onClick={() => removeFromCart(item._id)}
-                  className="ml-4 text-red-500"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
+{cart.length === 0 ? (
+  <p>Your cart is empty 🛒</p>
+) : (
+  <div>
+    {cart.map((item) => (
+      <CartItem key={item._id} item={item} />
+    ))}
 
-          <h3 className="text-xl font-bold mt-6">Total: ₹{total}</h3>
+    <h3 className="text-xl font-bold mt-6">Total: ₹{total}</h3>
 
-          {/* Checkout button  */}
-
-          <button
-  onClick={checkout}
-  disabled={cart.length === 0 || isNaN(total)}
-  className={`mt-4 px-4 py-2 rounded-lg text-white ${
-    cart.length === 0 || isNaN(total)
-      ? "bg-gray-400 cursor-not-allowed"
-      : "bg-green-600 hover:bg-green-700"
-  }`}
->
-  Pay & Checkout
-</button>
-
-
-        </div>
-      )}
+    {/* Checkout button */}
+    <button
+      onClick={checkout}
+      disabled={cart.length === 0 || isNaN(total)}
+      className={`mt-4 px-4 py-2 rounded-lg text-white ${
+        cart.length === 0 || isNaN(total)
+          ? "bg-gray-400 cursor-not-allowed"
+          : "bg-green-600 hover:bg-green-700"
+      }`}
+    >
+      Pay & Checkout
+    </button>
+  </div>
+)}
     </div>
   );
 }
