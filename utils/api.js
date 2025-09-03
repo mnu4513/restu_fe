@@ -1,0 +1,1 @@
+export const BackendAPI = `https://restu-be.onrender.com`
