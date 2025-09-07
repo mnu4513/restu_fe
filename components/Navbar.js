@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { CartContext } from "@/context/CartContext";
@@ -8,6 +9,7 @@ export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const { cart } = useContext(CartContext);
   const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <nav className="bg-green-600 text-white dark:bg-gray-800 dark:text-gray-100 shadow">
@@ -51,6 +53,7 @@ export default function Navbar() {
               <button
                 onClick={() => {
                   logout();
+                  router.push("/login");    // <<< redirect immediately
                   setMenuOpen(false);
                 }}
                 className="bg-red-500 px-3 py-1 rounded md:ml-4 hover:bg-red-600"

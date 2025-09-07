@@ -1,17 +1,19 @@
 import { useEffect, useState, useContext } from "react";
+import { useRouter } from "next/router";
 import axios from "axios";
 import { AuthContext } from "@/context/AuthContext";
 import Loader from "@/components/Loader";
 import toast from "react-hot-toast";
-import Image from "next/image"
+import Image from "next/image";
 import { BackendAPI } from "@/utils/api";
 
 export default function AdminMenu() {
-  const { user } = useContext(AuthContext);
+  const router = useRouter();
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [menu, setMenu] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const API = BackendAPI || "";  // "" means relative
+  const API = BackendAPI || "";
 
   const [form, setForm] = useState({
     name: "",
@@ -22,28 +24,52 @@ export default function AdminMenu() {
     category: "other",
   });
 
-  // ✅ Fetch menu items
+  // Redirect if not admin
   useEffect(() => {
-    if (!user || user.role !== "admin") return;
+    // Wait until auth state is known
+  if (authLoading) return;
+    // Wait until initial load resolves (if you have loading state on auth provider you can check that instead)
+    if (!user || user.role !== "admin") {
+      // replace so user can't go back to protected page with back button
+      router.replace("/login");
+      setLoading(false);
+    }
+  }, [user, router]);
 
+  // Fetch menu items (public endpoint in your example)
+  useEffect(() => {
+    // If user check is required for this endpoint, gate it here
+    if (!user || user.role !== "admin") {
+      return;
+    }
+
+    let mounted = true;
     const fetchMenu = async () => {
+      setLoading(true);
       try {
-        const { data } = await axios.get(
-          `${API}/api/menu`
-        );
-        setMenu(data);
+        const { data } = await axios.get(`${API}/api/menu`);
+        if (mounted) setMenu(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error(err);
+        console.error("Fetch menu error:", err);
+        toast.error("Failed to load menu");
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     fetchMenu();
-  }, [user]);
+    return () => {
+      mounted = false;
+    };
+  }, [user, API]);
 
-  // ✅ Add / Update Menu Item
+  // Add / Update Menu Item
   const saveMenuItem = async () => {
+    if (!user || user.role !== "admin") {
+      toast.error("Not authorized");
+      return;
+    }
+
     try {
       if (form._id) {
         // Update
@@ -52,7 +78,7 @@ export default function AdminMenu() {
           form,
           { headers: { Authorization: `Bearer ${user.token}` } }
         );
-        setMenu(menu.map((m) => (m._id === data._id ? data : m)));
+        setMenu((prev) => prev.map((m) => (m._id === data._id ? data : m)));
         toast.success("Item updated");
       } else {
         // Add
@@ -61,7 +87,7 @@ export default function AdminMenu() {
           form,
           { headers: { Authorization: `Bearer ${user.token}` } }
         );
-        setMenu([...menu, data]);
+        setMenu((prev) => [...prev, data]);
         toast.success("Item added");
       }
       setForm({
@@ -73,25 +99,33 @@ export default function AdminMenu() {
         category: "other",
       });
     } catch (err) {
+      console.error("Save menu error:", err);
       toast.error("Error saving item");
     }
   };
 
-  // ✅ Delete Menu Item
+  // Delete Menu Item
   const deleteMenuItem = async (id) => {
+    if (!user || user.role !== "admin") {
+      toast.error("Not authorized");
+      return;
+    }
     try {
-      await axios.delete(
-        `${API}/api/menu/${id}`,
-        { headers: { Authorization: `Bearer ${user.token}` } }
-      );
-      setMenu(menu.filter((m) => m._id !== id));
+      await axios.delete(`${API}/api/menu/${id}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      setMenu((prev) => prev.filter((m) => m._id !== id));
       toast.success("Item deleted");
     } catch (err) {
+      console.error("Delete menu error:", err);
       toast.error("Error deleting item");
     }
   };
 
   if (loading) return <Loader />;
+
+  // If not admin, don't render UI (router.replace will have run)
+  if (!user || user.role !== "admin") return null;
 
   return (
     <div className="p-6">
@@ -166,13 +200,20 @@ export default function AdminMenu() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {menu.map((item) => (
               <div key={item._id} className="border p-4 rounded">
-                <Image
-  src={`https://res.cloudinary.com/dyjpzvstq/image/upload/v1709985632/${item.image}`}
-  alt={item.name}
-  width={300}
-  height={200}
-  className="object-cover rounded mb-2"
-/>
+                {item.image ? (
+                  <Image
+                    src={`https://res.cloudinary.com/dyjpzvstq/image/upload/v1709985632/${item.image}`}
+                    alt={item.name}
+                    width={300}
+                    height={200}
+                    className="object-cover rounded mb-2"
+                  />
+                ) : (
+                  <div className="bg-gray-100 h-48 w-full rounded mb-2 flex items-center justify-center">
+                    <span className="text-sm text-gray-500">No image</span>
+                  </div>
+                )}
+
                 <h4 className="text-lg font-bold">{item.name}</h4>
                 <p>{item.description}</p>
                 <p>

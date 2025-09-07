@@ -1,4 +1,6 @@
+// AdminOrders.jsx (updated parts)
 import { useEffect, useState, useContext, useCallback } from "react";
+import { useRouter } from "next/router";
 import axios from "axios";
 import { AuthContext } from "@/context/AuthContext";
 import Loader from "@/components/Loader";
@@ -12,6 +14,7 @@ import AdminSearchBar from "@/components/admin/AdminSearchBar";
 import AdminPagination from "@/components/admin/AdminPagination";
 
 export default function AdminOrders() {
+  const router = useRouter();
   const { user } = useContext(AuthContext);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,17 +25,33 @@ export default function AdminOrders() {
 
   const API = BackendAPI || "";
 
+  // Redirect if not logged in or not admin
+  useEffect(() => {
+    if (loading) return; // wait for any initial loading if applicable
+    if (!user || user.role !== "admin") {
+      // push to admin login or general login page
+      router.replace("/login"); // change to whatever your login route is
+    }
+  }, [user, loading, router]);
+
   const fetchOrders = useCallback(async () => {
-    if (!user || user.role !== "admin") return;
+    if (!user || user.role !== "admin") {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     try {
       const { data } = await axios.get(
-        `${API}/api/admin/orders?page=${page}&limit=20&search=${search}&t=${Date.now()}`,
+        `${API}/api/admin/orders?page=${page}&limit=20&search=${encodeURIComponent(
+          search
+        )}&t=${Date.now()}`,
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
       setOrders(data.orders || []);
       setPages(data.pages || 1);
     } catch (err) {
       console.error("Fetch orders error:", err);
+      // optional: show toast
     } finally {
       setLoading(false);
     }
@@ -40,31 +59,54 @@ export default function AdminOrders() {
 
   useEffect(() => {
     fetchOrders();
+    // when user becomes null, fetchOrders will early-return and setLoading(false)
   }, [fetchOrders]);
 
   useEffect(() => {
     if (!user || user.role !== "admin") return;
-    const socketInstance = io(`${API}`);
-    socketInstance.on("connect", () => {
-      socketInstance.emit("joinAdmin");
+
+    const socketInstance = io(API, {
+      // pass auth if your server expects token
+      auth: { token: user.token },
     });
-    socketInstance.on("orderUpdated", (updatedOrder) => {
+
+    const onConnect = () => {
+      socketInstance.emit("joinAdmin");
+    };
+    socketInstance.on("connect", onConnect);
+
+    const onOrderUpdated = (updatedOrder) => {
       setOrders((prev) => {
         const exists = prev.find((o) => o._id === updatedOrder._id);
         if (exists) {
-          return prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o));
+          return prev.map((o) =>
+            o._id === updatedOrder._id ? updatedOrder : o
+          );
         } else {
           const audio = new Audio("/sounds/ding.mp3");
-          audio.play();
+          audio.play().catch(() => {
+            /* ignore autoplay errors */
+          });
           toast.success(`📦 New Order ${updatedOrder._id.slice(-5)}`);
           return [updatedOrder, ...prev];
         }
       });
-    });
-    return () => socketInstance.disconnect();
-  }, [user]);
+    };
+
+    socketInstance.on("orderUpdated", onOrderUpdated);
+
+    return () => {
+      socketInstance.off("connect", onConnect);
+      socketInstance.off("orderUpdated", onOrderUpdated);
+      socketInstance.disconnect();
+    };
+  }, [user, API]);
 
   const updateStatus = async (orderId, status) => {
+    if (!user) {
+      toast.error("Not authorized");
+      return;
+    }
     try {
       const { data } = await axios.put(
         `${API}/api/admin/${orderId}/status`,
@@ -75,7 +117,8 @@ export default function AdminOrders() {
       setOrders((prev) =>
         prev.map((o) => (o._id === orderId ? data.order : o))
       );
-    } catch {
+    } catch (err) {
+      console.error("Update status error:", err);
       toast.error("Error updating order");
     }
   };
@@ -92,14 +135,14 @@ export default function AdminOrders() {
         <p>No orders yet</p>
       ) : (
         <AnimatePresence>
-  {orders.map((order) => (
-    <AdminOrderCard
-      key={order._id}
-      order={order}
-      onUpdateStatus={updateStatus}
-    />
-  ))}
-</AnimatePresence>
+          {orders.map((order) => (
+            <AdminOrderCard
+              key={order._id}
+              order={order}
+              onUpdateStatus={updateStatus}
+            />
+          ))}
+        </AnimatePresence>
       )}
 
       <AdminPagination page={page} pages={pages} setPage={setPage} />
