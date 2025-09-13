@@ -1,11 +1,13 @@
+// pages/admin/menu.js
 import { useEffect, useState, useContext } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import { AuthContext } from "@/context/AuthContext";
 import Loader from "@/components/Loader";
 import toast from "react-hot-toast";
-import Image from "next/image";
 import { BackendAPI } from "@/utils/api";
+import AdminItemCard from "@/components/admin/AdminItemCard";
+import ImageUploader from "@/components/admin/ImageUploader";
 
 export default function AdminMenu() {
   const router = useRouter();
@@ -24,24 +26,18 @@ export default function AdminMenu() {
     category: "other",
   });
 
-  // Redirect if not admin
+  // Redirect if not admin (note authLoading included in deps)
   useEffect(() => {
-    // Wait until auth state is known
-  if (authLoading) return;
-    // Wait until initial load resolves (if you have loading state on auth provider you can check that instead)
+    if (authLoading) return;
     if (!user || user.role !== "admin") {
-      // replace so user can't go back to protected page with back button
       router.replace("/login");
       setLoading(false);
     }
-  }, [user, router]);
+  }, [user, authLoading, router]);
 
-  // Fetch menu items (public endpoint in your example)
+  // Fetch menu items
   useEffect(() => {
-    // If user check is required for this endpoint, gate it here
-    if (!user || user.role !== "admin") {
-      return;
-    }
+    if (!user || user.role !== "admin") return;
 
     let mounted = true;
     const fetchMenu = async () => {
@@ -63,33 +59,63 @@ export default function AdminMenu() {
     };
   }, [user, API]);
 
-  // Add / Update Menu Item
+  // Improved Save (create/update) with validation + better error logging
   const saveMenuItem = async () => {
     if (!user || user.role !== "admin") {
       toast.error("Not authorized");
       return;
     }
 
+    // Basic validation
+    if (!form.name || !String(form.name).trim()) {
+      toast.error("Name is required");
+      return;
+    }
+
+    // Normalize payload
+    const payload = {
+      ...form,
+      name: String(form.name).trim(),
+      description: form.description ? String(form.description).trim() : "",
+      image: form.image ? String(form.image) : "",
+      category: form.category ? String(form.category) : "other",
+      price: form.price === "" || form.price === null ? null : Number(form.price),
+      discount:
+        form.discount === "" || form.discount === null ? 0 : Number(form.discount),
+    };
+
+    if (payload.price !== null && Number.isNaN(payload.price)) {
+      toast.error("Price must be a number");
+      return;
+    }
+    if (Number.isNaN(payload.discount)) {
+      toast.error("Discount must be a number");
+      return;
+    }
+
+    const endpointBase = `${API}/api/menu`;
+    console.log("saveMenuItem -> endpoint:", endpointBase, "payload:", payload);
+
     try {
-      if (form._id) {
+      if (payload._id) {
         // Update
-        const { data } = await axios.put(
-          `${API}/api/menu/${form._id}`,
-          form,
-          { headers: { Authorization: `Bearer ${user.token}` } }
-        );
+        const { data } = await axios.put(`${endpointBase}/${payload._id}`, payload, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
+        // backend expected to return the updated item
         setMenu((prev) => prev.map((m) => (m._id === data._id ? data : m)));
         toast.success("Item updated");
       } else {
-        // Add
-        const { data } = await axios.post(
-          `${API}/api/menu`,
-          form,
-          { headers: { Authorization: `Bearer ${user.token}` } }
-        );
+        // Create
+        const { data } = await axios.post(endpointBase, payload, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
+        // backend expected to return the created item
         setMenu((prev) => [...prev, data]);
         toast.success("Item added");
       }
+
+      // reset form
       setForm({
         name: "",
         description: "",
@@ -100,7 +126,20 @@ export default function AdminMenu() {
       });
     } catch (err) {
       console.error("Save menu error:", err);
-      toast.error("Error saving item");
+
+      // try to read server message
+      const serverMsg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        (err?.response?.data ? JSON.stringify(err.response.data) : null);
+
+      if (serverMsg) {
+        toast.error(`Server: ${serverMsg}`);
+      } else if (err?.response?.status) {
+        toast.error(`Request failed: ${err.response.status}`);
+      } else {
+        toast.error("Error saving item (see console)");
+      }
     }
   };
 
@@ -122,9 +161,28 @@ export default function AdminMenu() {
     }
   };
 
+  // ---- Handlers to pass to AdminItemCard ----
+  const handleEdit = (item) => {
+    setForm({
+      _id: item._id,
+      name: item.name || "",
+      description: item.description || "",
+      image: item.image || "",
+      price: item.price || "",
+      discount: item.discount || 0,
+      category: item.category || "other",
+    });
+    document.getElementById("menu-form")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleDelete = (id) => {
+    if (!confirm("Are you sure you want to delete this item?")) return;
+    deleteMenuItem(id);
+  };
+  // ------------------------------------------------
+
   if (loading) return <Loader />;
 
-  // If not admin, don't render UI (router.replace will have run)
   if (!user || user.role !== "admin") return null;
 
   return (
@@ -132,7 +190,7 @@ export default function AdminMenu() {
       <h2 className="text-3xl font-bold mb-6">Manage Menu</h2>
 
       {/* Form */}
-      <div className="border p-4 mb-6 rounded">
+      <div id="menu-form" className="border p-4 mb-6 rounded">
         <h3 className="text-xl font-semibold mb-4">
           {form._id ? "Edit Item" : "Add New Item"}
         </h3>
@@ -144,13 +202,18 @@ export default function AdminMenu() {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="border px-3 py-2 rounded"
           />
-          <input
-            type="text"
-            placeholder="Image ID"
-            value={form.image}
-            onChange={(e) => setForm({ ...form, image: e.target.value })}
-            className="border px-3 py-2 rounded"
-          />
+
+          {/* ImageUploader replaces the Image ID input — it sets form.image via onUploadComplete */}
+          <div className="col-span-1 md:col-span-2">
+            <ImageUploader
+              api={API}
+              user={user}
+              initialImageId={form.image}
+              uploadEndpoint="/api/image/upload/image"
+              onUploadComplete={(publicId) => setForm((prev) => ({ ...prev, image: publicId }))}
+            />
+          </div>
+
           <input
             type="number"
             placeholder="Price"
@@ -183,12 +246,32 @@ export default function AdminMenu() {
             className="border px-3 py-2 rounded col-span-1 md:col-span-2"
           />
         </div>
-        <button
-          onClick={saveMenuItem}
-          className="bg-green-600 text-white px-4 py-2 rounded mt-4"
-        >
-          {form._id ? "Update Item" : "Add Item"}
-        </button>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={saveMenuItem}
+            className="bg-green-600 text-white px-4 py-2 rounded"
+          >
+            {form._id ? "Update Item" : "Add Item"}
+          </button>
+          {form._id && (
+            <button
+              onClick={() =>
+                setForm({
+                  name: "",
+                  description: "",
+                  image: "",
+                  price: "",
+                  discount: 0,
+                  category: "other",
+                })
+              }
+              className="bg-gray-300 px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Menu List */}
@@ -199,45 +282,12 @@ export default function AdminMenu() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {menu.map((item) => (
-              <div key={item._id} className="border p-4 rounded">
-                {item.image ? (
-                  <Image
-                    src={`https://res.cloudinary.com/dyjpzvstq/image/upload/v1709985632/${item.image}`}
-                    alt={item.name}
-                    width={300}
-                    height={200}
-                    className="object-cover rounded mb-2"
-                  />
-                ) : (
-                  <div className="bg-gray-100 h-48 w-full rounded mb-2 flex items-center justify-center">
-                    <span className="text-sm text-gray-500">No image</span>
-                  </div>
-                )}
-
-                <h4 className="text-lg font-bold">{item.name}</h4>
-                <p>{item.description}</p>
-                <p>
-                  ₹{item.price}{" "}
-                  {item.discount > 0 && (
-                    <span className="text-red-500">(-{item.discount}%)</span>
-                  )}
-                </p>
-                <p className="text-sm text-gray-500">Category: {item.category}</p>
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={() => setForm(item)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => deleteMenuItem(item._id)}
-                    className="bg-red-600 text-white px-3 py-1 rounded"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
+              <AdminItemCard
+                key={item._id}
+                item={item}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         )}

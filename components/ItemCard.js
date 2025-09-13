@@ -17,6 +17,7 @@ export default function ItemCard({ item }) {
     setTimeout(() => setAdding(false), 700); // reset animation
   };
 
+  console.log(item.image)
   return (
     <div
       className="p-4 border rounded-2xl shadow-md hover:shadow-xl 
