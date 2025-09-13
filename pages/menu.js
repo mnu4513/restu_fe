@@ -3,7 +3,7 @@ import ItemCard from "@/components/ItemCard";
 import Loader from "@/components/Loader";
 import axios from "axios";
 import { BackendAPI } from "@/utils/api";
-import Shimmer from "@/components/common/Shimmer";
+import CardLoader from "@/components/common/CardLoader";
 
 export default function Menu() {
   const [items, setItems] = useState([]);
@@ -30,7 +30,7 @@ export default function Menu() {
       <div className="p-6">
         <h2 className="text-3xl font-bold mb-6">Our Menu</h2>
         {loading ? (
-          <Shimmer/>
+          <CardLoader/>
           // <Loader />   // 👈 shows spinner while fetching
         ) : (
           items.length === 0 ? 
