@@ -1,19 +1,44 @@
-export default function AdminSearchBar({ search, setSearch, onSearch }) {
+// components/admin/AdminSearchBar.jsx
+import React, { useState, useEffect } from "react";
+
+export default function AdminSearchBar({ onSearch = () => {}, initialValue = "" }) {
+  const [q, setQ] = useState(initialValue || "");
+
+  // Keep input in sync if parent changes initialValue
+  useEffect(() => {
+    setQ(initialValue || "");
+  }, [initialValue]);
+
+  const handleSubmit = (e) => {
+    if (e) e.preventDefault();
+    onSearch(q.trim());
+  };
+
   return (
-    <div className="mb-4 flex items-center gap-2">
+    <form onSubmit={handleSubmit} className="mb-4 flex gap-2">
       <input
         type="text"
-        placeholder="Search by Order ID or User ID"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="border px-3 py-2 rounded w-1/3"
+        placeholder="Search orders (id, customer, phone...)"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        className="flex-1 border px-3 py-2 rounded"
       />
       <button
-        onClick={onSearch}
+        type="submit"
         className="bg-blue-600 text-white px-4 py-2 rounded"
       >
         Search
       </button>
-    </div>
+      <button
+        type="button"
+        onClick={() => {
+          setQ("");
+          onSearch("");
+        }}
+        className="bg-gray-200 px-3 py-2 rounded"
+      >
+        Reset
+      </button>
+    </form>
   );
 }

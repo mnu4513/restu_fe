@@ -1,4 +1,4 @@
-// AdminOrders.jsx (updated parts)
+// AdminOrders.jsx (relevant parts)
 import { useEffect, useState, useContext, useCallback } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
@@ -21,7 +21,8 @@ export default function AdminOrders() {
 
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
-  const [search, setSearch] = useState("");
+  // keep local search input in search bar component; we will pass searchValue to fetchOrders when user submits
+  const [lastSearch, setLastSearch] = useState("");
 
   const API = BackendAPI || "";
 
@@ -29,64 +30,72 @@ export default function AdminOrders() {
   useEffect(() => {
     if (loading) return; // wait for any initial loading if applicable
     if (!user || user.role !== "admin") {
-      // push to admin login or general login page
       router.replace("/login"); // change to whatever your login route is
     }
   }, [user, loading, router]);
 
-  const fetchOrders = useCallback(async () => {
-    if (!user || user.role !== "admin") {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const { data } = await axios.get(
-        `${API}/api/admin/orders?page=${page}&limit=20&search=${encodeURIComponent(
-          search
-        )}&t=${Date.now()}`,
-        { headers: { Authorization: `Bearer ${user.token}` } }
-      );
-      setOrders(data.orders || []);
-      setPages(data.pages || 1);
-    } catch (err) {
-      console.error("Fetch orders error:", err);
-      // optional: show toast
-    } finally {
-      setLoading(false);
-    }
-  }, [user, page, search, API]);
+  // fetchOrders accepts an optional searchValue (string).
+  const fetchOrders = useCallback(
+    async (searchValue = "") => {
+      if (!user || user.role !== "admin") {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      try {
+        const q = encodeURIComponent(searchValue || "");
+        const { data } = await axios.get(
+          `${API}/api/admin/orders?page=${page}&limit=20&search=${q}&t=${Date.now()}`,
+          { headers: { Authorization: `Bearer ${user.token}` } }
+        );
+        setOrders(data.orders || []);
+        setPages(data.pages || 1);
+      } catch (err) {
+        console.error("Fetch orders error:", err);
+        toast.error("Failed to load orders");
+      } finally {
+        setLoading(false);
+      }
+    },
+    // Notice search is removed from deps so typing doesn't auto-trigger fetchOrders
+    [user, page, API]
+  );
 
+  // initial load + reload when page changes
   useEffect(() => {
-    fetchOrders();
-    // when user becomes null, fetchOrders will early-return and setLoading(false)
-  }, [fetchOrders]);
+    // use lastSearch (empty by default) when page changes
+    fetchOrders(lastSearch);
+  }, [fetchOrders, page, lastSearch]);
 
+  // Search handler (called by AdminSearchBar when user submits)
+  const handleSearchSubmit = (searchValue) => {
+    // update lastSearch so pagination + UI are in sync
+    setLastSearch(searchValue || "");
+    // reset to page 1 on new search
+    setPage(1);
+    // fetch with the provided search value
+    fetchOrders(searchValue || "");
+  };
+
+  // ... socket logic unchanged (kept as-is) ...
   useEffect(() => {
     if (!user || user.role !== "admin") return;
 
     const socketInstance = io(API, {
-      // pass auth if your server expects token
       auth: { token: user.token },
     });
 
-    const onConnect = () => {
-      socketInstance.emit("joinAdmin");
-    };
+    const onConnect = () => socketInstance.emit("joinAdmin");
     socketInstance.on("connect", onConnect);
 
     const onOrderUpdated = (updatedOrder) => {
       setOrders((prev) => {
         const exists = prev.find((o) => o._id === updatedOrder._id);
         if (exists) {
-          return prev.map((o) =>
-            o._id === updatedOrder._id ? updatedOrder : o
-          );
+          return prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o));
         } else {
           const audio = new Audio("/sounds/ding.mp3");
-          audio.play().catch(() => {
-            /* ignore autoplay errors */
-          });
+          audio.play().catch(() => {});
           toast.success(`📦 New Order ${updatedOrder._id.slice(-5)}`);
           return [updatedOrder, ...prev];
         }
@@ -129,7 +138,8 @@ export default function AdminOrders() {
     <div className="p-6">
       <h2 className="text-3xl font-bold mb-6">All Orders</h2>
 
-      <AdminSearchBar search={search} setSearch={setSearch} onSearch={fetchOrders} />
+      {/* Pass handler to search bar; searchValue is only used when user submits */}
+      <AdminSearchBar onSearch={handleSearchSubmit} initialValue={lastSearch} />
 
       {orders.length === 0 ? (
         <p>No orders yet</p>

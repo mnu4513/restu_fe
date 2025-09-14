@@ -25,8 +25,8 @@ export default function Login() {
       <div className="p-6 max-w-md mx-auto">
         <h2 className="text-3xl font-bold mb-4">Login</h2>
         <form onSubmit={handleLogin} className="space-y-4">
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email" className="w-full border px-3 py-2 rounded" required />
+          <input type="text" value={email} onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email / Phone" className="w-full border px-3 py-2 rounded" required />
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
             placeholder="Password" className="w-full border px-3 py-2 rounded" required />
           <button type="submit" className="w-full bg-green-600 text-white py-2 rounded">

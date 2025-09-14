@@ -24,8 +24,8 @@ export default function Register() {
   const handleSendOtp = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/api/auth/send-otp`, { email: form.email });
-      toast.success("OTP sent via E-mail");
+      await axios.post(`${API}/api/auth/send-otp`, { number: form.number });
+      toast.success("OTP sent via WhatsApp");
       setStep(2);
     } catch (err) {
       console.error("Send OTP error:", err);
@@ -37,7 +37,7 @@ export default function Register() {
     e.preventDefault();
     try {
       const { data } = await axios.post(`${API}/api/auth/verify-otp`, {
-        email: form.email,
+        number: form.number,
         otp,
       });
 
@@ -109,7 +109,7 @@ export default function Register() {
       {step === 2 && (
         <form onSubmit={handleVerifyOtp} className="space-y-4">
           <p className="text-gray-600">
-            We’ve sent an OTP to <strong>{form.email}</strong>. Enter it below:
+            We’ve sent an OTP to <strong>{form.number}</strong>. Enter it below:
           </p>
           <input
             type="text"
