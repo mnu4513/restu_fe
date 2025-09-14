@@ -1,3 +1,5 @@
+import Shimmer from "@/components/common/Shimmer";
+
 export function ListLoader() {
   return (
     <div className="space-y-4">

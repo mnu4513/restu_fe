@@ -36,15 +36,19 @@ export default function Navbar() {
           <Link href="/menu" onClick={() => setMenuOpen(false)}>
             Menu
           </Link>
-          <Link href="/cart" onClick={() => setMenuOpen(false)}>
+          {user?.role !== "admin" && (
+            <Link href="/cart" onClick={() => setMenuOpen(false)}>
             Cart ({cart.reduce((sum, i) => sum + i.quantity, 0)})
           </Link>
+          )}
 
           {user ? (
             <>
-              <Link href="/orders" onClick={() => setMenuOpen(false)}>
+              {user.role !== "admin" && (
+                <Link href="/orders" onClick={() => setMenuOpen(false)}>
                 Orders
               </Link>
+            )}
               {user.role === "admin" && (
                 <Link href="/admin" onClick={() => setMenuOpen(false)}>
                   Admin

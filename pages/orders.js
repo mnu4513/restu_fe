@@ -10,6 +10,7 @@ import io from "socket.io-client";
 import { BackendAPI } from "@/utils/api";
 import ReorderModal from "@/components/ReorderModal";
 import OrderCard from "@/components/OrderCard";
+import { ListLoader } from "@/components/common/ListLoader";
 
 export default function Orders() {
   const { user, loading: authLoading } = useContext(AuthContext); // <- need loading here
@@ -21,10 +22,16 @@ export default function Orders() {
   const API = BackendAPI || "";
   const socketRef = useRef(null);
 
+
   // Redirect when auth resolved and user is not logged in
   useEffect(() => {
     if (authLoading) return;              // still checking auth — do nothing
     if (user === null) router.replace("/login"); // not logged in — go to login
+      if (user?.role === "admin") {
+    toast.error("Admin can't place order");
+    router.replace("/admin");
+  }
+  
   }, [user, authLoading, router]);
 
   // Fetch orders and setup socket (only when user exists)
@@ -94,7 +101,7 @@ export default function Orders() {
   };
 
   // show loader while either auth is being checked or fetching page data
-  if (authLoading || loading) return <Loader />;
+  if (authLoading || loading) return <ListLoader />;
 
   // If not user (should have redirected) keep a safe fallback
   if (!user) return null;

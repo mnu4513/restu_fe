@@ -3,17 +3,25 @@ import { AuthContext } from "@/context/AuthContext";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { BackendAPI } from "@/utils/api";
+import { useRouter } from "next/router";
+
 
 export default function AddressPage() {
   const { user } = useContext(AuthContext);
   const [addresses, setAddresses] = useState([]);
   const [form, setForm] = useState({ label: "", addressLine: "", city: "", state: "", pincode: "" });
   const [editingId, setEditingId] = useState(null); // 👈 for editing mode
+  const router = useRouter();
 
   const API = BackendAPI || "";  // "" means relative
 
   // ✅ Load addresses
   useEffect(() => {
+      if (user?.role === "admin") {
+    toast.error("Admin doesn't need to save address");
+    router.replace("/admin");
+  }
+  
     if (user) {
       axios
         .get(`${API}/api/addresses`, {

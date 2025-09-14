@@ -12,6 +12,11 @@ export default function Cart() {
   const { user } = useContext(AuthContext);
   const router = useRouter();
 
+  if (user?.role === "admin") {
+    toast.error("Admin can't place order");
+    router.replace("/admin");
+  }
+
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState("");
   const [newAddress, setNewAddress] = useState({ label: "", addressLine: "", city: "", state: "", pincode: "" });

@@ -3,11 +3,13 @@ import { CartContext } from "@/context/CartContext";
 import Image from "next/image";
 import { Dialog } from "@headlessui/react";
 import toast from "react-hot-toast";
+import { AuthContext } from "@/context/AuthContext";
 
 export default function ItemCard({ item }) {
   const { addToCart } = useContext(CartContext);
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false); // ✅ button animation
+  const { user, logout } = useContext(AuthContext);
 
   // ✅ Handle Add to Cart
   const handleAddToCart = () => {
@@ -50,13 +52,15 @@ export default function ItemCard({ item }) {
 
       {/* ✅ Buttons */}
       <div className="flex gap-2 w-full mt-4">
-        <button
+        {user?.role !== "admin" && (
+          <button
           onClick={handleAddToCart}
           className={`flex-1 px-4 py-2 rounded-lg font-medium text-white transition 
             ${adding ? "bg-green-700 scale-95" : "bg-green-600 hover:bg-green-700"}`}
         >
           {adding ? "✔ Added!" : "🛒 Add to Cart"}
         </button>
+      )}
 
         <button
           onClick={() => setOpen(true)}
@@ -100,7 +104,8 @@ export default function ItemCard({ item }) {
               >
                 Close
               </button>
-              <button
+              {user?.role !== "admin" && (
+                <button
                 onClick={() => {
                   handleAddToCart();
                   setOpen(false);
@@ -109,6 +114,7 @@ export default function ItemCard({ item }) {
               >
                 🛒 Add to Cart
               </button>
+            )}
             </div>
           </Dialog.Panel>
         </div>
