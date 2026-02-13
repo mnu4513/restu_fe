@@ -27,7 +27,7 @@ export default function Menu() {
 
   return (
     <div>
-      <div className="p-6">
+      <div className="p-6 max-w-7xl m-auto">
         <h2 className="text-3xl font-bold mb-6">Our Menu</h2>
         {loading ? (
           <CardLoader/>

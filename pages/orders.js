@@ -3,7 +3,6 @@ import { useEffect, useState, useContext, useRef } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { CartContext } from "@/context/CartContext";
 import axios from "axios";
-import Loader from "@/components/Loader";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import io from "socket.io-client";
@@ -107,7 +106,7 @@ export default function Orders() {
   if (!user) return null;
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl m-auto">
       <h2 className="text-3xl font-bold mb-6">My Orders</h2>
 
       {orders.length === 0 ? (

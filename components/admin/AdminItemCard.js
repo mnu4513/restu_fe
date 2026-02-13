@@ -1,70 +1,101 @@
-import React from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
-
-export default function AdminItemCard({ item, onEdit = () => {}, onDelete = () => {} }) {
+export default function AdminItemCard({
+  item,
+  onEdit = () => {},
+  onDelete = () => {},
+}) {
   if (!item) return null;
-  const { _id, name, description, image, price, discount = 0, category } = item;
 
-  const showPrice = () => {
-    const p = Number(price || 0);
-    if (!p) return "—";
-    if (!discount) return `₹${p}`;
-    const discounted = (p - (p * Number(discount)) / 100).toFixed(2);
-    return (
-      <>
-        <span className="font-semibold">₹{discounted}</span>
-        <span className="text-sm line-through ml-2 text-gray-400">₹{p}</span>
-        <span className="ml-2 text-red-500 text-sm">(-{discount}%)</span>
-      </>
-    );
-  };
-  console.log(image)
+  const {
+    _id,
+    name,
+    description,
+    images = [],
+    price,
+    discount = 0,
+    category,
+  } = item;
+
+  // 🔥 Only use images array
+  const displayImage =
+    images.length > 0 && images[0]?.startsWith("http")
+      ? images[0]
+      : null;
+
+  const finalPrice =
+    discount > 0
+      ? (price - (price * discount) / 100).toFixed(2)
+      : price;
 
   return (
-    <article className="border rounded p-4 bg-white dark:bg-slate-800 shadow-sm">
-      {image ? (
-        <div className="w-full h-48 mb-3 rounded overflow-hidden">
+    <motion.div
+      whileHover={{ y: -4 }}
+      className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow hover:shadow-lg transition-all duration-300 flex flex-col"
+    >
+      {/* IMAGE */}
+      <div className="relative w-full h-40 bg-slate-800">
+        {displayImage ? (
           <Image
-            src={`https://res.cloudinary.com/dyjpzvstq/image/upload/v1709985632/${image}`}
+            src={displayImage}
             alt={name}
-            width={360}
-            height={360}
-            className="object-cover w-full h-full rounded"
+            fill
+            className="object-cover"
           />
-        </div>
-      ) : (
-        <div className="bg-gray-100 dark:bg-slate-700 h-48 rounded mb-3 flex items-center justify-center">
-          <span className="text-sm text-gray-500">No image</span>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center justify-center h-full text-slate-500 text-sm">
+            No Image
+          </div>
+        )}
 
-      <h4 className="text-lg font-bold mb-1">{name}</h4>
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{description}</p>
+        {discount > 0 && (
+          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+            {discount}% OFF
+          </div>
+        )}
+      </div>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-base">{showPrice()}</div>
-          <div className="text-xs text-gray-500 mt-1">Category: {category}</div>
+      {/* CONTENT */}
+      <div className="p-3 flex flex-col flex-1">
+        <h3 className="text-sm font-semibold text-white truncate">
+          {name}
+        </h3>
+
+        <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+          {description}
+        </p>
+
+        <div className="mt-2 text-sm text-green-400 font-medium">
+          ₹{finalPrice}
+          {discount > 0 && (
+            <span className="line-through text-slate-500 text-xs ml-2">
+              ₹{price}
+            </span>
+          )}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="text-[11px] text-slate-500 mt-1 capitalize">
+          {category}
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-2 mt-3">
           <button
             onClick={() => onEdit(item)}
-            className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
-            aria-label={`Edit ${name}`}
+            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black text-xs py-1.5 rounded-md transition"
           >
             Edit
           </button>
+
           <button
             onClick={() => onDelete(_id)}
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-            aria-label={`Delete ${name}`}
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs py-1.5 rounded-md transition"
           >
             Delete
           </button>
         </div>
       </div>
-    </article>
+    </motion.div>
   );
 }

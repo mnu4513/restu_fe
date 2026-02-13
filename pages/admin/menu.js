@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { BackendAPI } from "@/utils/api";
 import AdminItemCard from "@/components/admin/AdminItemCard";
 import ImageUploader from "@/components/admin/ImageUploader";
+import MenuForm from "./MenuForm";
 
 export default function AdminMenu() {
   const router = useRouter();
@@ -17,14 +18,17 @@ export default function AdminMenu() {
 
   const API = BackendAPI || "";
 
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    image: "",
-    price: "",
-    discount: 0,
-    category: "other",
-  });
+ const [form, setForm] = useState({
+  _id: "",
+  name: "",
+  description: "",
+  thumbnail: "",
+  images: [],
+  price: "",
+  discount: 0,
+  category: "other",
+});
+
 
   // Redirect if not admin (note authLoading included in deps)
   useEffect(() => {
@@ -77,7 +81,8 @@ export default function AdminMenu() {
       ...form,
       name: String(form.name).trim(),
       description: form.description ? String(form.description).trim() : "",
-      image: form.image ? String(form.image) : "",
+      thumbnail: form.thumbnail || "",
+      images: Array.isArray(form.images) ? form.images : [],
       category: form.category ? String(form.category) : "other",
       price: form.price === "" || form.price === null ? null : Number(form.price),
       discount:
@@ -117,13 +122,16 @@ export default function AdminMenu() {
 
       // reset form
       setForm({
-        name: "",
-        description: "",
-        image: "",
-        price: "",
-        discount: 0,
-        category: "other",
-      });
+  _id: "",
+  name: "",
+  description: "",
+  thumbnail: "",
+  images: [],
+  price: "",
+  discount: 0,
+  category: "other",
+});
+
     } catch (err) {
       console.error("Save menu error:", err);
 
@@ -167,7 +175,8 @@ export default function AdminMenu() {
       _id: item._id,
       name: item.name || "",
       description: item.description || "",
-      image: item.image || "",
+      thumbnail: item.thumbnail || "",
+images: item.images || [],
       price: item.price || "",
       discount: item.discount || 0,
       category: item.category || "other",
@@ -186,112 +195,33 @@ export default function AdminMenu() {
   if (!user || user.role !== "admin") return null;
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl m-auto">
       <h2 className="text-3xl font-bold mb-6">Manage Menu</h2>
 
       {/* Form */}
-      <div id="menu-form" className="border p-4 mb-6 rounded">
-        <h3 className="text-xl font-semibold mb-4">
-          {form._id ? "Edit Item" : "Add New Item"}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="Name"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="border px-3 py-2 rounded"
-          />
+      <MenuForm
+  form={form}
+  setForm={setForm}
+  onSubmit={saveMenuItem}
+  API={API}
+  user={user}
+/>
 
-          {/* ImageUploader replaces the Image ID input — it sets form.image via onUploadComplete */}
-          <div className="col-span-1 md:col-span-2">
-            <ImageUploader
-              api={API}
-              user={user}
-              initialImageId={form.image}
-              uploadEndpoint="/api/image/upload/image"
-              onUploadComplete={(publicId) => setForm((prev) => ({ ...prev, image: publicId }))}
-            />
-          </div>
-
-          <input
-            type="number"
-            placeholder="Price"
-            value={form.price}
-            onChange={(e) => setForm({ ...form, price: e.target.value })}
-            className="border px-3 py-2 rounded"
-          />
-          <input
-            type="number"
-            placeholder="Discount %"
-            value={form.discount}
-            onChange={(e) => setForm({ ...form, discount: e.target.value })}
-            className="border px-3 py-2 rounded"
-          />
-          <select
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-            className="border px-3 py-2 rounded"
-          >
-            <option value="starter">Starter</option>
-            <option value="main">Main</option>
-            <option value="dessert">Dessert</option>
-            <option value="beverage">Beverage</option>
-            <option value="other">Other</option>
-          </select>
-          <textarea
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="border px-3 py-2 rounded col-span-1 md:col-span-2"
-          />
-        </div>
-
-        <div className="flex gap-2 mt-4">
-          <button
-            onClick={saveMenuItem}
-            className="bg-green-600 text-white px-4 py-2 rounded"
-          >
-            {form._id ? "Update Item" : "Add Item"}
-          </button>
-          {form._id && (
-            <button
-              onClick={() =>
-                setForm({
-                  name: "",
-                  description: "",
-                  image: "",
-                  price: "",
-                  discount: 0,
-                  category: "other",
-                })
-              }
-              className="bg-gray-300 px-4 py-2 rounded"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* Menu List */}
-      <div>
-        <h3 className="text-xl font-semibold mb-4">Menu Items</h3>
-        {menu.length === 0 ? (
-          <p>No items yet</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {menu.map((item) => (
-              <AdminItemCard
-                key={item._id}
-                item={item}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+    <div className="max-w-6xl mx-auto px-4">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    {menu.map((item) => (
+      <AdminItemCard
+        key={item._id}
+        item={item}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+    ))}
+  </div>
+</div>
+
     </div>
   );
 }

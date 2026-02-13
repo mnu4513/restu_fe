@@ -32,7 +32,7 @@ export default function Home() {
       <Hero />
 
       {/* ✅ Menu Preview Section */}
-      <section className="p-6">
+      <section className="p-6 max-w-7xl m-auto">
         <h2 className="text-3xl font-bold mb-6">Popular Dishes</h2>
         {loading ? (
           <Loader />

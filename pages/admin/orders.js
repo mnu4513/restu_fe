@@ -135,7 +135,7 @@ export default function AdminOrders() {
   if (loading) return <Loader />;
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl m-auto">
       <h2 className="text-3xl font-bold mb-6">All Orders</h2>
 
       {/* Pass handler to search bar; searchValue is only used when user submits */}

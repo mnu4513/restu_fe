@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   if (!user || user.role !== "admin") return null;
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl m-auto">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       <ul className="space-y-4">
         <li>

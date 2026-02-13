@@ -120,7 +120,7 @@ export default function Cart() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl m-auto">
       <h2 className="text-3xl font-bold mb-6">Checkout</h2>
 
       {/* ✅ Address Section */}

@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="h-[70vh] bg-gradient-to-r from-green-600 to-green-400 flex items-center justify-center text-center relative overflow-hidden">
+    <section className="h-[70vh] bg-gradient-to-r from-green-600 to-green-400 flex items-center justify-center text-center relative overflow-hidden max-w-7xl m-auto">
       <div className="max-w-3xl px-6">
         {/* Animated Heading */}
         <motion.h1
