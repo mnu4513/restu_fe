@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import axios from "axios";
+import axiosApi from "@/utils/axios";
 import toast from "react-hot-toast";
 
 /**
@@ -137,7 +137,7 @@ export default function ImageUploader({
         },
       };
 
-      const resp = await axios.post(endpoint, fd, config);
+      const resp = await axiosApi.post(endpoint, fd, config);
 
       // Support multiple response shapes
       const cloudResult = resp?.data?.data || resp?.data;

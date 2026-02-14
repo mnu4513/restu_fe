@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import ItemCard from "@/components/ItemCard";
-import Loader from "@/components/Loader";
-import axios from "axios";
+import api from "@/utils/axios";
 import { BackendAPI } from "@/utils/api";
 import CardLoader from "@/components/common/CardLoader";
 
@@ -14,7 +13,7 @@ export default function Menu() {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const { data } = await axios.get(`${API}/api/menu`);
+        const { data } = await api.get(`${API}/api/menu`);
         setItems(data);
       } catch (err) {
         console.error(err);

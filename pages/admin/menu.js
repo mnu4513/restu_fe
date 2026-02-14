@@ -1,7 +1,7 @@
 // pages/admin/menu.js
 import { useEffect, useState, useContext } from "react";
 import { useRouter } from "next/router";
-import axios from "axios";
+import api from "@/utils/axios";
 import { AuthContext } from "@/context/AuthContext";
 import Loader from "@/components/Loader";
 import toast from "react-hot-toast";
@@ -47,7 +47,7 @@ export default function AdminMenu() {
     const fetchMenu = async () => {
       setLoading(true);
       try {
-        const { data } = await axios.get(`${API}/api/menu`);
+        const { data } = await api.get(`${API}/api/menu`);
         if (mounted) setMenu(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Fetch menu error:", err);
@@ -104,7 +104,7 @@ export default function AdminMenu() {
     try {
       if (payload._id) {
         // Update
-        const { data } = await axios.put(`${endpointBase}/${payload._id}`, payload, {
+        const { data } = await api.put(`${endpointBase}/${payload._id}`, payload, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         // backend expected to return the updated item
@@ -112,7 +112,7 @@ export default function AdminMenu() {
         toast.success("Item updated");
       } else {
         // Create
-        const { data } = await axios.post(endpointBase, payload, {
+        const { data } = await api.post(endpointBase, payload, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         // backend expected to return the created item
@@ -158,7 +158,7 @@ export default function AdminMenu() {
       return;
     }
     try {
-      await axios.delete(`${API}/api/menu/${id}`, {
+      await api.delete(`${API}/api/menu/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       setMenu((prev) => prev.filter((m) => m._id !== id));

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "@/utils/axios";
 import toast from "react-hot-toast";
 
 export default function ImageSlot({
@@ -24,7 +24,7 @@ export default function ImageSlot({
       const formData = new FormData();
       formData.append("image", file);
 
-      const res = await axios.post(
+      const res = await api.post(
         `${API}/api/image/upload/image`,
         formData,
         {

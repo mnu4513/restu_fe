@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import ItemCard from "@/components/ItemCard";
 import Loader from "@/components/Loader";
-import axios from "axios";
+import api from "@/utils/axios";
 import Link from "next/link";
 import { BackendAPI } from "@/utils/api";
 import Hero from "@/components/Hero";   // 👈 Fancy animated Hero
@@ -15,7 +15,7 @@ export default function Home() {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const { data } = await axios.get(`${API}/api/menu`);
+        const { data } = await api.get(`${API}/api/menu`);
         setItems(data.slice(0, 6)); // ✅ Show only first 6 items
       } catch (err) {
         console.error(err);

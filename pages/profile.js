@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import axios from "axios";
+import api from "@/utils/axios";
 import toast from "react-hot-toast";
 import { BackendAPI } from "@/utils/api";
 import { useRouter } from "next/router";
@@ -32,7 +32,7 @@ export default function ProfilePage() {
         };
 
         const [profileRes] = await Promise.all([
-          axios.get(`${API}/api/auth/profile/`, config),
+          api.get(`${API}/api/auth/profile/`, config),
         ]);
 console.log(profileRes);
 

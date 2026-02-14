@@ -1,7 +1,7 @@
 // AdminOrders.jsx (relevant parts)
 import { useEffect, useState, useContext, useCallback } from "react";
 import { useRouter } from "next/router";
-import axios from "axios";
+import api from "@/utils/axios";
 import { AuthContext } from "@/context/AuthContext";
 import Loader from "@/components/Loader";
 import toast from "react-hot-toast";
@@ -44,7 +44,7 @@ export default function AdminOrders() {
       setLoading(true);
       try {
         const q = encodeURIComponent(searchValue || "");
-        const { data } = await axios.get(
+        const { data } = await api.get(
           `${API}/api/admin/orders?page=${page}&limit=20&search=${q}&t=${Date.now()}`,
           { headers: { Authorization: `Bearer ${user.token}` } }
         );
@@ -117,7 +117,7 @@ export default function AdminOrders() {
       return;
     }
     try {
-      const { data } = await axios.put(
+      const { data } = await api.put(
         `${API}/api/admin/${orderId}/status`,
         { status },
         { headers: { Authorization: `Bearer ${user.token}` } }

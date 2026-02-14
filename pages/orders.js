@@ -2,7 +2,7 @@
 import { useEffect, useState, useContext, useRef } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { CartContext } from "@/context/CartContext";
-import axios from "axios";
+import api from "@/utils/axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import io from "socket.io-client";
@@ -42,7 +42,7 @@ export default function Orders() {
     const fetchOrders = async () => {
       setLoading(true);
       try {
-        const { data } = await axios.get(`${API}/api/order/my`, {
+        const { data } = await api.get(`${API}/api/order/my`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         if (mounted) setOrders(data);

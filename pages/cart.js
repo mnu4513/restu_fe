@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect } from "react";
 import { CartContext } from "@/context/CartContext";
 import { AuthContext } from "@/context/AuthContext";
-import axios from "axios";
+import api from "@/utils/axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import { BackendAPI } from "@/utils/api";
@@ -27,7 +27,7 @@ export default function Cart() {
   // ✅ Fetch addresses
   useEffect(() => {
     if (user) {
-      axios.get(`${API}/api/addresses`, {
+      api.get(`${API}/api/addresses`, {
         headers: { Authorization: `Bearer ${user.token}` },
       })
       .then((res) => {
@@ -48,7 +48,7 @@ export default function Cart() {
   // ✅ Add new address inline
   const saveNewAddress = async () => {
     try {
-      const { data } = await axios.post(
+      const { data } = await api.post(
         `${API}/api/addresses`,
         newAddress,
         { headers: { Authorization: `Bearer ${user.token}` } }
@@ -75,7 +75,7 @@ export default function Cart() {
     }
 
     try {
-      const { data: orderData } = await axios.post(
+      const { data: orderData } = await api.post(
         `${API}/api/payment/create-order`,
         { amount: total * 100 },
         { headers: { Authorization: `Bearer ${user.token}` } }
@@ -90,7 +90,7 @@ export default function Cart() {
         order_id: orderData.id,
         handler: async function (response) {
   try {
-    await axios.post(
+    await api.post(
       `${API}/api/payment/verify`,
       {
         ...response,                // payment_id, order_id, signature

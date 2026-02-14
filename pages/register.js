@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "@/utils/axios";
 import { BackendAPI } from "@/utils/api";
 
 export default function Register() {
@@ -24,7 +24,7 @@ export default function Register() {
   const handleSendOtp = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/api/auth/send-otp`, { email: form.email });
+      await api.post(`${API}/api/auth/send-otp`, { name: form.name, email: form.email });
       toast.success("OTP sent via E-mail");
       setStep(2);
     } catch (err) {
@@ -36,7 +36,7 @@ export default function Register() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await axios.post(`${API}/api/auth/verify-otp`, {
+      const { data } = await api.post(`${API}/api/auth/verify-otp`, {
         email: form.email,
         otp,
       });
