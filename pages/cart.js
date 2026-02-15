@@ -9,7 +9,7 @@ import CartItem from "@/components/CartItem";
 
 export default function Cart() {
   const { cart, updateQty, removeFromCart, clearCart } = useContext(CartContext);
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
   const router = useRouter();
 
   if (user?.role === "admin") {
@@ -26,6 +26,14 @@ export default function Cart() {
 
   // ✅ Fetch addresses
   useEffect(() => {
+        if (loading) return;
+
+    if (!user) {
+      toast.error("Please login first");
+      router.replace("/login");
+      return;
+    }
+
     if (user) {
       api.get(`${API}/api/addresses`, {
         headers: { Authorization: `Bearer ${user.token}` },
@@ -37,13 +45,18 @@ export default function Cart() {
       })
       .catch(() => toast.error("Failed to load addresses"));
     }
-  }, [user]);
+  }, [user, loading, router]);
 
-  const total = cart.reduce(
+const total = Number(
+  cart.reduce(
     (sum, i) =>
-      sum + (i.price - (i.price * (i.discount || 0)) / 100) * (i.quantity || 1),
+      sum +
+      (i.price - (i.price * (i.discount || 0)) / 100) *
+        (i.quantity || 1),
     0
-  );
+  ).toFixed(2)
+);
+
 
   // ✅ Add new address inline
   const saveNewAddress = async () => {

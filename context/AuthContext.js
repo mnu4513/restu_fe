@@ -53,8 +53,8 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-    setUser(data);
-    localStorage.setItem("user", JSON.stringify(data));
+    // setUser(data);
+    // localStorage.setItem("user", JSON.stringify(data));
     return data;
   };
 

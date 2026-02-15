@@ -33,27 +33,38 @@ export default function Register() {
     }
   };
 
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    try {
-      const { data } = await api.post(`${API}/api/auth/verify-otp`, {
+const handleVerifyOtp = async (e) => {
+  e.preventDefault();
+
+  try {
+    const { data } = await api.post(`${API}/api/auth/verify-otp`, {
+      email: form.email,
+      otp,
+    });
+
+    if (data.success) {
+
+      // ⭐ Only create account (no login)
+      await api.post(`${API}/api/auth/register`, {
+        name: form.name,
         email: form.email,
-        otp,
+        number: form.number,
+        password: form.password,
       });
 
-      if (data.success) {
-        // If OTP verified, register the user
-        await register(form.name, form.email, form.number, form.password);
-        toast.success("Account created!");
-        router.push("/");
-      } else {
-        toast.error("OTP verification failed");
-      }
-    } catch (err) {
-      console.error("Verify OTP error:", err);
-      toast.error(err?.response?.data?.message || "OTP verification failed");
+      toast.success("Account created successfully! Please login.");
+      router.push("/login");
+
+    } else {
+      toast.error("OTP verification failed");
     }
-  };
+
+  } catch (err) {
+    console.error("Verify OTP error:", err);
+    toast.error(err?.response?.data?.message || "OTP verification failed");
+  }
+};
+
 
   return (
     <div className="p-6 max-w-md mx-auto">
