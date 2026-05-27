@@ -2,17 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import axiosApi from "@/utils/axios";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
 
-/**
- * ImageUploader
- * Props:
- *  - api (string): base API url, e.g. BackendAPI or "" (default)
- *  - user (object): auth user object (used to attach token header). Optional if endpoint is public
- *  - initialImageId (string): already-uploaded Cloudinary public_id to show
- *  - uploadEndpoint (string): path under api to hit. default: "/api/image/upload/image"
- *  - onUploadComplete(publicId) - callback invoked with returned public_id
- *  - disabled (bool) - optional to disable controls
- */
 export default function ImageUploader({
   api = "",
   user = null,
@@ -36,83 +27,35 @@ export default function ImageUploader({
     };
   }, []);
 
-  // keep currentImageId in sync if parent changes initialImageId
   useEffect(() => {
     setCurrentImageId(initialImageId || "");
   }, [initialImageId]);
 
-  // cleanup preview objectURL when component unmounts or preview changes
   useEffect(() => {
     return () => {
-      if (previewUrl) {
-        try {
-          URL.revokeObjectURL(previewUrl);
-        } catch (e) {
-          // ignore
-        }
-      }
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0] || null;
+
     if (!f) {
-      if (previewUrl) {
-        try {
-          URL.revokeObjectURL(previewUrl);
-        } catch {}
-      }
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
       setSelectedFile(null);
       setPreviewUrl("");
       return;
     }
 
-    // revoke previous preview immediately to avoid leaking blobs
-    if (previewUrl) {
-      try {
-        URL.revokeObjectURL(previewUrl);
-      } catch {}
-    }
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
 
     setSelectedFile(f);
-    const url = URL.createObjectURL(f);
-    setPreviewUrl(url);
-  };
-
-  const buildAbsoluteUrl = (maybeApi, maybeEndpoint) => {
-    // Normalize inputs to strings
-    const a = String(maybeApi || "");
-    const e = String(maybeEndpoint || "");
-
-    // If endpoint already looks like absolute, return it.
-    if (/^https?:\/\//i.test(e)) return e;
-    if (/^https?:\/\//i.test(a)) {
-      // api looks absolute; combine safely
-      // ensure api doesn't end with slash and endpoint starts with slash
-      const apiClean = a.endsWith("/") ? a.slice(0, -1) : a;
-      const epClean = e.startsWith("/") ? e : `/${e}`;
-      return `${apiClean}${epClean}`;
-    }
-
-    // If api empty and endpoint starts with "/", make absolute using current origin
-    if (!a && e.startsWith("/")) {
-      return `${window.location.origin}${e}`;
-    }
-
-    // If api is relative (e.g. "/api" or ""), combine and make absolute
-    const apiPart = a ? (a.endsWith("/") ? a.slice(0, -1) : a) : "";
-    const epPart = e.startsWith("/") ? e : `/${e}`;
-    // If apiPart already starts with '/', join relative to origin
-    if (apiPart.startsWith("/")) {
-      return `${window.location.origin}${apiPart}${epPart}`;
-    }
-
-    // fallback: just use origin + apiPart + epPart
-    return `${window.location.origin}/${apiPart}${epPart}`.replace(/([^:]\/)\/+/g, "$1");
+    setPreviewUrl(URL.createObjectURL(f));
   };
 
   const handleUpload = async () => {
     if (!selectedFile) return toast.error("Select an image first");
+
     setUploading(true);
     setProgress(0);
 
@@ -120,52 +63,39 @@ export default function ImageUploader({
       const fd = new FormData();
       fd.append("image", selectedFile);
 
-      const endpoint = buildAbsoluteUrl(api, uploadEndpoint);
+      const endpoint = api + uploadEndpoint;
 
-      // Debug: show endpoint in console so you can confirm it's what you expect
-      console.log("ImageUploader: POST endpoint ->", endpoint);
-
-      const config = {
+      const resp = await axiosApi.post(endpoint, fd, {
         onUploadProgress: (ev) => {
           if (!ev.total) return;
           const pct = Math.round((ev.loaded * 100) / ev.total);
           if (isMounted.current) setProgress(pct);
         },
         headers: {
-          // do not set Content-Type, browser will set the correct multipart boundary
-          ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}),
+          ...(user?.token && { Authorization: `Bearer ${user.token}` }),
         },
-      };
+      });
 
-      const resp = await axiosApi.post(endpoint, fd, config);
-
-      // Support multiple response shapes
       const cloudResult = resp?.data?.data || resp?.data;
       const publicId =
-        cloudResult?.public_id || cloudResult?.publicId || cloudResult?.id || null;
+        cloudResult?.public_id ||
+        cloudResult?.publicId ||
+        cloudResult?.id ||
+        null;
 
-      if (!publicId) {
-        console.error("Upload response body:", resp?.data);
-        throw new Error("No public_id returned from upload endpoint");
-      }
-
-      if (!isMounted.current) return;
+      if (!publicId) throw new Error("No public_id returned");
 
       setCurrentImageId(publicId);
       onUploadComplete(publicId);
+
       toast.success("Image uploaded");
 
-      // clear preview and selected file
-      if (previewUrl) {
-        try {
-          URL.revokeObjectURL(previewUrl);
-        } catch {}
-      }
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl("");
       setSelectedFile(null);
     } catch (err) {
-      console.error("Image upload failed:", err);
-      toast.error("Image upload failed. See console for details.");
+      console.error(err);
+      toast.error("Upload failed");
     } finally {
       if (isMounted.current) {
         setUploading(false);
@@ -176,72 +106,134 @@ export default function ImageUploader({
 
   const handleClear = () => {
     setSelectedFile(null);
-    if (previewUrl) {
-      try {
-        URL.revokeObjectURL(previewUrl);
-      } catch {}
-      setPreviewUrl("");
-    }
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl("");
     setCurrentImageId("");
     onUploadComplete("");
   };
 
   return (
-    <div className="space-y-2">
-      {/* preview existing cloudinary image */}
-      {currentImageId ? (
-        <div className="mb-2">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="
+        w-full
+        rounded-3xl
+        border border-gray-200 dark:border-white/10
+        bg-white/70 dark:bg-white/[0.03]
+        backdrop-blur-xl
+        p-5
+        space-y-4
+      "
+    >
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-gray-800 dark:text-gray-200">
+          Image Upload
+        </h2>
+
+        {uploading && (
+          <span className="text-xs text-blue-500 font-medium">
+            Uploading {progress}%
+          </span>
+        )}
+      </div>
+
+      {/* CURRENT IMAGE */}
+      {currentImageId && (
+        <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10">
           <Image
             src={`https://res.cloudinary.com/dyjpzvstq/image/upload/v1709985632/${currentImageId}`}
-            alt="uploaded image"
-            width={600}
-            height={360}
-            className="object-cover rounded w-full h-48"
+            alt="uploaded"
+            fill
+            className="object-cover"
           />
-          <div className="text-xs text-gray-500 mt-1">Image ID: {currentImageId}</div>
         </div>
-      ) : null}
+      )}
 
-      {/* local preview (before upload) */}
-      {previewUrl ? (
-        <div className="mb-2">
-          <img src={previewUrl} alt="preview" className="w-full h-48 object-cover rounded" />
+      {/* PREVIEW */}
+      {previewUrl && (
+        <div className="relative w-full h-48 rounded-2xl overflow-hidden">
+          <img
+            src={previewUrl}
+            alt="preview"
+            className="w-full h-full object-cover"
+          />
         </div>
-      ) : null}
+      )}
 
-      <div className="flex items-center gap-2">
+      {/* FILE INPUT */}
+      <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="file"
           accept="image/*"
           onChange={handleFileChange}
           disabled={uploading || disabled}
-          className="border px-2 py-1 rounded"
+          className="
+            w-full
+            text-sm
+            border border-gray-300 dark:border-white/10
+            bg-white dark:bg-gray-900
+            rounded-xl
+            px-3 py-2
+            text-gray-700 dark:text-gray-200
+          "
         />
 
-        <button
-          type="button"
-          onClick={handleUpload}
-          disabled={!selectedFile || uploading || disabled}
-          className="bg-blue-600 text-white px-3 py-1 rounded disabled:opacity-60"
-        >
-          {uploading ? `Uploading (${progress}%)` : "Upload"}
-        </button>
+        {/* ACTION BUTTONS */}
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleUpload}
+            disabled={!selectedFile || uploading}
+            className="
+              flex-1 sm:flex-none
+              px-4 py-2
+              rounded-xl
+              font-semibold text-white
+              bg-gradient-to-r from-blue-500 to-indigo-500
+              hover:from-blue-600 hover:to-indigo-600
+              disabled:opacity-50
+              transition
+            "
+          >
+            {uploading ? "Uploading..." : "Upload"}
+          </button>
 
-        <button
-          type="button"
-          onClick={handleClear}
-          disabled={uploading || disabled}
-          className="bg-gray-200 px-3 py-1 rounded"
-        >
-          Clear
-        </button>
+          <button
+            onClick={handleClear}
+            disabled={uploading}
+            className="
+              flex-1 sm:flex-none
+              px-4 py-2
+              rounded-xl
+              font-semibold
+              text-gray-700 dark:text-gray-200
+              bg-gray-100 dark:bg-white/10
+              hover:bg-gray-200 dark:hover:bg-white/20
+              transition
+            "
+          >
+            Clear
+          </button>
+        </div>
       </div>
 
+      {/* PROGRESS BAR */}
       {uploading && (
-        <div className="w-full bg-gray-100 rounded h-2 overflow-hidden mt-2">
-          <div style={{ width: `${progress}%` }} className="h-full bg-blue-500" />
+        <div className="w-full h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-blue-500 transition-all"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       )}
-    </div>
+
+      {/* IMAGE ID */}
+      {currentImageId && (
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          ID: {currentImageId}
+        </p>
+      )}
+    </motion.div>
   );
 }

@@ -3,105 +3,163 @@ import { Dialog } from "@headlessui/react";
 export default function ReorderModal({ order, onClose, onConfirm, setOrder }) {
   if (!order) return null;
 
+  const updateQty = (idx, delta) => {
+    const updated = [...order.items];
+    updated[idx].quantity = Math.max(1, updated[idx].quantity + delta);
+    setOrder({ ...order, items: updated });
+  };
+
+  const removeItem = (idx) => {
+    const updated = order.items.filter((_, j) => j !== idx);
+    setOrder({ ...order, items: updated });
+  };
+
+  const total = order.items.reduce(
+    (sum, i) =>
+      sum +
+      (i.menuItem?.price -
+        (i.menuItem?.price * (i.menuItem?.discount || 0)) / 100) *
+        i.quantity,
+    0
+  );
+
   return (
     <Dialog open={true} onClose={onClose} className="relative z-50">
       {/* Overlay */}
-      <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
 
-      {/* Modal Box */}
-      <div className="fixed inset-0 flex items-center justify-center">
-        <Dialog.Panel className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-          <Dialog.Title className="text-lg font-semibold">
-            Reorder Confirmation
-          </Dialog.Title>
-          <Dialog.Description className="mt-2 text-gray-600">
-            Adjust items if needed before reordering:
-          </Dialog.Description>
+      {/* Center Wrapper */}
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <Dialog.Panel
+          className="
+            w-full max-w-lg
+            rounded-3xl
+            bg-white/90 dark:bg-[#0b0f19]/90
+            backdrop-blur-2xl
+            border border-gray-200 dark:border-white/10
+            shadow-2xl
+            overflow-hidden
+          "
+        >
+          {/* HEADER */}
+          <div className="p-5 border-b border-gray-200 dark:border-white/10">
+            <Dialog.Title className="text-xl font-black text-gray-900 dark:text-white">
+              🔁 Reorder Items
+            </Dialog.Title>
 
-          {/* Items Preview with Quantity Controls + Remove */}
-          <div className="mt-3 border-t pt-3">
-            <h4 className="font-medium mb-2">Items:</h4>
-            <ul className="space-y-3 text-sm text-gray-700">
-              {order.items.map((i, idx) => (
-                <li
+            <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Adjust quantity or remove items before placing order
+            </Dialog.Description>
+          </div>
+
+          {/* ITEMS */}
+          <div className="max-h-[400px] overflow-y-auto p-5 space-y-4">
+            {order.items.map((i, idx) => {
+              const image =
+                i.menuItem?.thumbnail || "/placeholder-food.png";
+
+              return (
+                <div
                   key={idx}
-                  className="flex justify-between items-center border-b pb-2"
+                  className="
+                    flex items-center gap-3
+                    p-3 rounded-2xl
+                    bg-gray-50 dark:bg-white/[0.03]
+                    border border-gray-100 dark:border-white/10
+                  "
                 >
-                  <div>
-                    {i.menuItem?.name || "Item"}{" "}
-                    <span className="text-gray-500">
-                      (₹{i.menuItem?.price}{" "}
-                      {i.menuItem?.discount > 0 && `- ${i.menuItem.discount}%`})
-                    </span>
+                  {/* IMAGE */}
+                  <img
+                    src={image}
+                    className="w-14 h-14 rounded-xl object-cover"
+                    alt="item"
+                  />
+
+                  {/* INFO */}
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      {i.menuItem?.name || "Item"}
+                    </p>
+
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      ₹{i.menuItem?.price}{" "}
+                      {i.menuItem?.discount > 0 &&
+                        `(-${i.menuItem.discount}%)`}
+                    </p>
                   </div>
 
-                  {/* Actions */}
+                  {/* ACTIONS */}
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => {
-                        const updated = [...order.items];
-                        if (updated[idx].quantity > 1) updated[idx].quantity -= 1;
-                        setOrder({ ...order, items: updated });
-                      }}
-                      className="px-2 bg-gray-300 rounded"
+                      onClick={() => updateQty(idx, -1)}
+                      className="w-7 h-7 rounded-lg bg-gray-400 dark:bg-white/10"
                     >
                       -
                     </button>
-                    <span>{i.quantity}</span>
+
+                    <span className="min-w-[20px] text-gray-400 text-center text-sm">
+                      {i.quantity}
+                    </span>
+
                     <button
-                      onClick={() => {
-                        const updated = [...order.items];
-                        updated[idx].quantity += 1;
-                        setOrder({ ...order, items: updated });
-                      }}
-                      className="px-2 bg-gray-300 rounded"
+                      onClick={() => updateQty(idx, 1)}
+                      className="w-7 h-7 rounded-lg bg-gray-400 dark:bg-white/10"
                     >
                       +
                     </button>
 
                     <button
-                      onClick={() => {
-                        const updated = order.items.filter((_, j) => j !== idx);
-                        setOrder({ ...order, items: updated });
-                      }}
-                      className="ml-2 text-red-600 hover:text-red-800"
+                      onClick={() => removeItem(idx)}
+                      className="text-red-500 text-sm ml-2"
                     >
-                      ❌
+                      ✕
                     </button>
                   </div>
-                </li>
-              ))}
-            </ul>
+                </div>
+              );
+            })}
 
-            {/* Updated Total */}
-            <p className="mt-4 font-semibold">
-              Total: ₹
-              {order.items.reduce(
-                (sum, i) =>
-                  sum +
-                  (i.menuItem?.price -
-                    (i.menuItem?.price * (i.menuItem?.discount || 0)) / 100) *
-                    i.quantity,
-                0
-              )}
-            </p>
+            {order.items.length === 0 && (
+              <p className="text-center text-gray-500">
+                No items left in reorder
+              </p>
+            )}
           </div>
 
-          {/* Buttons */}
-          <div className="mt-4 flex justify-end gap-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={order.items.length === 0}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-            >
-              Confirm
-            </button>
+          {/* FOOTER */}
+          <div className="p-5 border-t border-gray-200 dark:border-white/10">
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-sm text-gray-500">Total</span>
+              <span className="text-lg font-black text-green-600">
+                ₹{total.toFixed(2)}
+              </span>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                className="
+                  flex-1 py-3 rounded-2xl
+                  bg-gray-200 dark:bg-white/10
+                  text-gray-700 dark:text-white
+                "
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={onConfirm}
+                disabled={order.items.length === 0}
+                className="
+                  flex-1 py-3 rounded-2xl
+                  bg-gradient-to-r from-green-500 to-orange-500
+                  text-white font-semibold
+                  disabled:opacity-50
+                "
+              >
+                Confirm Order
+              </button>
+            </div>
           </div>
         </Dialog.Panel>
       </div>

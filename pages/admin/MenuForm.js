@@ -1,14 +1,7 @@
 import { motion } from "framer-motion";
 import ImageSlot from "./ImageSlot";
 
-export default function MenuForm({
-  form,
-  setForm,
-  onSubmit,
-  API,
-  user,
-}) {
-  // 🔥 Safe fallback (VERY IMPORTANT for Vercel build)
+export default function MenuForm({ form, setForm, onSubmit, API, user }) {
   const safeForm = form || {
     _id: "",
     name: "",
@@ -20,21 +13,34 @@ export default function MenuForm({
     category: "other",
   };
 
-  // 🔥 SSR Safe Guard
-  if (typeof window === "undefined") return null;
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-900 shadow-2xl rounded-3xl p-6 sm:p-8 overflow-hidden"
+      className="
+        relative
+        bg-white/70 dark:bg-white/[0.03]
+        backdrop-blur-2xl
+        border border-gray-200 dark:border-white/10
+        shadow-xl
+        rounded-3xl
+        p-6 sm:p-8
+        overflow-hidden
+      "
     >
-      <h3 className="text-2xl font-bold mb-6">
-        {safeForm?._id ? "Edit Menu Item" : "Create Menu Item"}
-      </h3>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+          {safeForm?._id ? "Edit Menu Item" : "Create Menu Item"}
+        </h3>
 
-      {/* ================= BASIC INFO ================= */}
-      <div className="grid md:grid-cols-2 gap-6">
+        <span className="text-xs px-3 py-1 rounded-full bg-green-500/10 text-green-500">
+          Admin Panel
+        </span>
+      </div>
+
+      {/* ================= FORM ================= */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
         <input
           type="text"
@@ -43,7 +49,7 @@ export default function MenuForm({
           onChange={(e) =>
             setForm?.((prev) => ({ ...prev, name: e.target.value }))
           }
-          className="input-style"
+          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-green-500"
         />
 
         <input
@@ -53,7 +59,7 @@ export default function MenuForm({
           onChange={(e) =>
             setForm?.((prev) => ({ ...prev, price: e.target.value }))
           }
-          className="input-style"
+          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-green-500"
         />
 
         <input
@@ -63,7 +69,7 @@ export default function MenuForm({
           onChange={(e) =>
             setForm?.((prev) => ({ ...prev, discount: e.target.value }))
           }
-          className="input-style"
+          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-green-500"
         />
 
         <select
@@ -71,7 +77,7 @@ export default function MenuForm({
           onChange={(e) =>
             setForm?.((prev) => ({ ...prev, category: e.target.value }))
           }
-          className="input-style"
+          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-green-500"
         >
           <option value="starter">Starter</option>
           <option value="main">Main</option>
@@ -86,26 +92,37 @@ export default function MenuForm({
           onChange={(e) =>
             setForm?.((prev) => ({ ...prev, description: e.target.value }))
           }
-          className="input-style md:col-span-2"
+          className="
+            md:col-span-2
+            w-full px-4 py-3
+            rounded-xl
+            border border-gray-200 dark:border-white/10
+            bg-white dark:bg-gray-900
+            text-gray-900 dark:text-white
+            outline-none
+            focus:ring-2 focus:ring-green-500
+            min-h-[120px]
+          "
         />
       </div>
 
       {/* ================= THUMBNAIL ================= */}
       <div className="mt-10">
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 
-                        dark:from-gray-900 dark:to-gray-800 
-                        border border-gray-200 dark:border-gray-700 
-                        rounded-2xl p-6 shadow-lg">
-
-          <h4 className="text-lg font-semibold mb-6">
-            Item Thumbnail
+        <div className="
+          rounded-2xl
+          border border-gray-200 dark:border-white/10
+          bg-gray-50 dark:bg-white/[0.02]
+          p-5 sm:p-6
+        ">
+          <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            Thumbnail Image
           </h4>
 
-          <div className="flex flex-col md:flex-row items-center gap-8">
+          <div className="flex flex-col md:flex-row gap-6 items-center">
 
-            <div className="w-48 md:w-56">
+            <div className="w-full md:w-56">
               <ImageSlot
-                label="Thumbnail Image"
+                label="Thumbnail"
                 value={safeForm?.thumbnail || ""}
                 API={API}
                 user={user}
@@ -115,10 +132,10 @@ export default function MenuForm({
               />
             </div>
 
-            <div className="flex-1 text-sm text-gray-600 dark:text-gray-400 space-y-2">
-              <p>✔ Appears in menu listings.</p>
-              <p>✔ Recommended size: 800x800px.</p>
-              <p>✔ Square images look best.</p>
+            <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <p>✔ Used in menu cards</p>
+              <p>✔ Recommended: 800×800</p>
+              <p>✔ Square format works best</p>
             </div>
 
           </div>
@@ -127,10 +144,11 @@ export default function MenuForm({
 
       {/* ================= GALLERY ================= */}
       <div className="mt-10">
-        <h4 className="font-semibold mb-4">Gallery Images (Max 4)</h4>
+        <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+          Gallery Images (Max 4)
+        </h4>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[0, 1, 2, 3].map((index) => (
             <ImageSlot
               key={index}
@@ -147,7 +165,6 @@ export default function MenuForm({
               }}
             />
           ))}
-
         </div>
       </div>
 
@@ -155,12 +172,22 @@ export default function MenuForm({
       <div className="mt-10 flex justify-end">
         <button
           onClick={onSubmit}
-          className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-xl shadow-lg hover:scale-105 transition-all"
+          className="
+            px-8 py-3
+            rounded-2xl
+            font-semibold text-white
+            bg-gradient-to-r from-green-500 to-emerald-600
+            hover:scale-[1.02]
+            active:scale-95
+            transition-all
+          "
         >
           {safeForm?._id ? "Update Item" : "Create Item"}
         </button>
       </div>
 
+      {/* glow background */}
+      <div className="absolute -top-20 -right-20 w-64 h-64 bg-green-500/10 blur-3xl rounded-full pointer-events-none" />
     </motion.div>
   );
 }

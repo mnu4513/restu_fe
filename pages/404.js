@@ -20,21 +20,17 @@ export default function Custom404() {
         bg-[size:60px_60px]"
       />
 
-      {/* ORBS */}
-      <motion.div
+      {/* ORBS (⚠️ REMOVED framer-motion to fix chunk crash) */}
+      <div
         className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px]
         bg-purple-400/30 dark:bg-purple-700/20
-        rounded-full blur-[120px]"
-        animate={{ x: [0, 60, 0], y: [0, 40, 0] }}
-        transition={{ duration: 12, repeat: Infinity }}
+        rounded-full blur-[120px] animate-pulse"
       />
 
-      <motion.div
+      <div
         className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px]
         bg-blue-400/30 dark:bg-blue-700/20
-        rounded-full blur-[120px]"
-        animate={{ x: [0, -60, 0], y: [0, -40, 0] }}
-        transition={{ duration: 14, repeat: Infinity }}
+        rounded-full blur-[120px] animate-pulse"
       />
 
       {/* CONTENT */}

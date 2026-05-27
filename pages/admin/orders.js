@@ -1,4 +1,3 @@
-// AdminOrders.jsx (relevant parts)
 import { useEffect, useState, useContext, useCallback } from "react";
 import { useRouter } from "next/router";
 import api from "@/utils/axios";
@@ -8,7 +7,7 @@ import toast from "react-hot-toast";
 import io from "socket.io-client";
 import { BackendAPI } from "@/utils/api";
 
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import AdminOrderCard from "@/components/admin/AdminOrderCard";
 import AdminSearchBar from "@/components/admin/AdminSearchBar";
 import AdminPagination from "@/components/admin/AdminPagination";
@@ -16,68 +15,64 @@ import AdminPagination from "@/components/admin/AdminPagination";
 export default function AdminOrders() {
   const router = useRouter();
   const { user } = useContext(AuthContext);
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
-  // keep local search input in search bar component; we will pass searchValue to fetchOrders when user submits
   const [lastSearch, setLastSearch] = useState("");
 
   const API = BackendAPI || "";
 
-  // Redirect if not logged in or not admin
+  // ================= AUTH GUARD =================
   useEffect(() => {
-    if (loading) return; // wait for any initial loading if applicable
-    if (!user || user.role !== "admin") {
-      router.replace("/login"); // change to whatever your login route is
+    if (!loading && (!user || user.role !== "admin")) {
+      router.replace("/login");
     }
   }, [user, loading, router]);
 
-  // fetchOrders accepts an optional searchValue (string).
+  // ================= FETCH ORDERS =================
   const fetchOrders = useCallback(
     async (searchValue = "") => {
-      if (!user || user.role !== "admin") {
-        setLoading(false);
-        return;
-      }
+      if (!user || user.role !== "admin") return;
+
       setLoading(true);
+
       try {
         const q = encodeURIComponent(searchValue || "");
+
         const { data } = await api.get(
           `${API}/api/admin/orders?page=${page}&limit=20&search=${q}&t=${Date.now()}`,
-          { headers: { Authorization: `Bearer ${user.token}` } }
+          {
+            headers: { Authorization: `Bearer ${user.token}` },
+          }
         );
+
         setOrders(data.orders || []);
         setPages(data.pages || 1);
       } catch (err) {
-        console.error("Fetch orders error:", err);
+        console.error(err);
         toast.error("Failed to load orders");
       } finally {
         setLoading(false);
       }
     },
-    // Notice search is removed from deps so typing doesn't auto-trigger fetchOrders
     [user, page, API]
   );
 
-  // initial load + reload when page changes
   useEffect(() => {
-    // use lastSearch (empty by default) when page changes
     fetchOrders(lastSearch);
   }, [fetchOrders, page, lastSearch]);
 
-  // Search handler (called by AdminSearchBar when user submits)
-  const handleSearchSubmit = (searchValue) => {
-    // update lastSearch so pagination + UI are in sync
-    setLastSearch(searchValue || "");
-    // reset to page 1 on new search
+  // ================= SEARCH =================
+  const handleSearchSubmit = (value) => {
+    setLastSearch(value || "");
     setPage(1);
-    // fetch with the provided search value
-    fetchOrders(searchValue || "");
+    fetchOrders(value || "");
   };
 
-  // ... socket logic unchanged (kept as-is) ...
+  // ================= SOCKET =================
   useEffect(() => {
     if (!user || user.role !== "admin") return;
 
@@ -85,14 +80,14 @@ export default function AdminOrders() {
       auth: { token: user.token },
     });
 
-    const onConnect = () => socketInstance.emit("joinAdmin");
-    socketInstance.on("connect", onConnect);
-
     const onOrderUpdated = (updatedOrder) => {
       setOrders((prev) => {
         const exists = prev.find((o) => o._id === updatedOrder._id);
+
         if (exists) {
-          return prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o));
+          return prev.map((o) =>
+            o._id === updatedOrder._id ? updatedOrder : o
+          );
         } else {
           const audio = new Audio("/sounds/ding.mp3");
           audio.play().catch(() => {});
@@ -105,57 +100,101 @@ export default function AdminOrders() {
     socketInstance.on("orderUpdated", onOrderUpdated);
 
     return () => {
-      socketInstance.off("connect", onConnect);
       socketInstance.off("orderUpdated", onOrderUpdated);
       socketInstance.disconnect();
     };
   }, [user, API]);
 
+  // ================= STATUS UPDATE =================
   const updateStatus = async (orderId, status) => {
-    if (!user) {
-      toast.error("Not authorized");
-      return;
-    }
     try {
       const { data } = await api.put(
         `${API}/api/admin/${orderId}/status`,
         { status },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
-      toast.success("Order status updated");
+
+      toast.success("Order updated");
+
       setOrders((prev) =>
         prev.map((o) => (o._id === orderId ? data.order : o))
       );
     } catch (err) {
-      console.error("Update status error:", err);
+      console.error(err);
       toast.error("Error updating order");
     }
   };
 
+  // ================= LOADER =================
   if (loading) return <Loader />;
 
+  // ================= UI =================
   return (
-    <div className="p-6 max-w-7xl m-auto">
-      <h2 className="text-3xl font-bold mb-6">All Orders</h2>
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0b0f19] p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
 
-      {/* Pass handler to search bar; searchValue is only used when user submits */}
-      <AdminSearchBar onSearch={handleSearchSubmit} initialValue={lastSearch} />
+        {/* HEADER */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+        >
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+            📦 All Orders
+          </h2>
 
-      {orders.length === 0 ? (
-        <p>No orders yet</p>
-      ) : (
-        <AnimatePresence>
-          {orders.map((order) => (
-            <AdminOrderCard
-              key={order._id}
-              order={order}
-              onUpdateStatus={updateStatus}
-            />
-          ))}
-        </AnimatePresence>
-      )}
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Total Pages: {pages}
+          </div>
+        </motion.div>
 
-      <AdminPagination page={page} pages={pages} setPage={setPage} />
+        {/* SEARCH */}
+        <div
+          className="
+            bg-white/70 dark:bg-white/[0.03]
+            backdrop-blur-xl
+            border border-gray-200 dark:border-white/10
+            rounded-2xl p-4
+          "
+        >
+          <AdminSearchBar
+            onSearch={handleSearchSubmit}
+            initialValue={lastSearch}
+          />
+        </div>
+
+        {/* ORDERS LIST */}
+        {orders.length === 0 ? (
+          <div className="text-center text-gray-500 py-10">
+            No orders found
+          </div>
+        ) : (
+          <AnimatePresence>
+            <div className="grid grid-cols-1 gap-4">
+              {orders.map((order) => (
+                <AdminOrderCard
+                  key={order._id}
+                  order={order}
+                  onUpdateStatus={updateStatus}
+                />
+              ))}
+            </div>
+          </AnimatePresence>
+        )}
+
+        {/* PAGINATION */}
+        <div
+          className="
+            bg-white/70 dark:bg-white/[0.03]
+            backdrop-blur-xl
+            border border-gray-200 dark:border-white/10
+            rounded-2xl p-4
+          "
+        >
+          <AdminPagination page={page} pages={pages} setPage={setPage} />
+        </div>
+
+      </div>
     </div>
   );
 }

@@ -18,7 +18,6 @@ export default function AdminItemCard({
     category,
   } = item;
 
-  // 🔥 Only use images array
   const displayImage =
     images.length > 0 && images[0]?.startsWith("http")
       ? images[0]
@@ -31,71 +30,117 @@ export default function AdminItemCard({
 
   return (
     <motion.div
-      whileHover={{ y: -4 }}
-      className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow hover:shadow-lg transition-all duration-300 flex flex-col"
+      whileHover={{ y: -6, scale: 1.01 }}
+      className="
+        group relative
+        rounded-3xl
+        overflow-hidden
+        border border-gray-200 dark:border-white/10
+        bg-white/70 dark:bg-white/[0.03]
+        backdrop-blur-2xl
+        shadow-sm hover:shadow-2xl
+        transition-all duration-300
+        flex flex-col
+      "
     >
       {/* IMAGE */}
-      <div className="relative w-full h-40 bg-slate-800">
+      <div className="relative w-full h-44 bg-gray-100 dark:bg-white/5 overflow-hidden">
         {displayImage ? (
           <Image
             src={displayImage}
             alt={name}
             fill
-            className="object-cover"
+            className="object-cover group-hover:scale-105 transition duration-500"
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-slate-500 text-sm">
-            No Image
+          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+            No Image Available
           </div>
         )}
 
+        {/* DISCOUNT BADGE */}
         {discount > 0 && (
-          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+          <div
+            className="
+              absolute top-3 left-3
+              px-3 py-1
+              text-xs font-semibold
+              rounded-full
+              bg-red-500 text-white
+              shadow-md
+            "
+          >
             {discount}% OFF
           </div>
         )}
       </div>
 
       {/* CONTENT */}
-      <div className="p-3 flex flex-col flex-1">
-        <h3 className="text-sm font-semibold text-white truncate">
+      <div className="p-4 flex flex-col flex-1">
+        {/* NAME */}
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
           {name}
         </h3>
 
-        <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+        {/* DESCRIPTION */}
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
           {description}
         </p>
 
-        <div className="mt-2 text-sm text-green-400 font-medium">
-          ₹{finalPrice}
+        {/* PRICE */}
+        <div className="mt-3 flex items-end gap-2">
+          <span className="text-xl font-black text-green-600">
+            ₹{finalPrice}
+          </span>
+
           {discount > 0 && (
-            <span className="line-through text-slate-500 text-xs ml-2">
+            <span className="text-sm line-through text-gray-400">
               ₹{price}
             </span>
           )}
         </div>
 
-        <div className="text-[11px] text-slate-500 mt-1 capitalize">
+        {/* CATEGORY */}
+        <div className="mt-2 text-xs text-gray-500 uppercase tracking-wide">
           {category}
         </div>
 
-        {/* Buttons */}
-        <div className="flex gap-2 mt-3">
+        {/* ACTION BUTTONS */}
+        <div className="mt-5 flex gap-3">
           <button
             onClick={() => onEdit(item)}
-            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black text-xs py-1.5 rounded-md transition"
+            className="
+              flex-1 py-2 rounded-xl
+              font-semibold text-sm
+              bg-gradient-to-r from-yellow-400 to-orange-400
+              text-black
+              hover:scale-[1.02]
+              active:scale-95
+              transition
+            "
           >
             Edit
           </button>
 
           <button
             onClick={() => onDelete(_id)}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs py-1.5 rounded-md transition"
+            className="
+              flex-1 py-2 rounded-xl
+              font-semibold text-sm
+              bg-gradient-to-r from-red-500 to-pink-500
+              text-white
+              hover:scale-[1.02]
+              active:scale-95
+              transition
+            "
           >
             Delete
           </button>
         </div>
       </div>
+
+      {/* HOVER GLOW */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-gradient-to-r from-orange-500/5 to-green-500/5 rounded-3xl" />
     </motion.div>
   );
 }

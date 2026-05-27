@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-
 export default function AddressForm({
   form,
   setForm,
@@ -8,50 +6,67 @@ export default function AddressForm({
   onCancel,
 }) {
   return (
-    <div className="border p-4 rounded mb-6 bg-white dark:bg-gray-900 shadow">
-      <h3 className="text-lg font-semibold mb-3">
-        {editingId ? "Update Address" : "Add Address"}
+    <div
+      className="
+        rounded-3xl
+        border border-gray-200 dark:border-white/10
+        bg-white/70 dark:bg-white/[0.03]
+        backdrop-blur-xl
+        p-6 md:p-8
+        shadow-lg
+      "
+    >
+      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-5">
+        {editingId ? "✏️ Update Address" : "➕ Add New Address"}
       </h3>
 
-      <input
-        className="border w-full mb-2 p-2 rounded"
-        placeholder="Label (Home, Work)"
-        value={form.label}
-        onChange={(e) => setForm({ ...form, label: e.target.value })}
-      />
+      <div className="grid md:grid-cols-2 gap-4">
+        <input
+          className="input"
+          placeholder="Label (Home, Work)"
+          value={form.label}
+          onChange={(e) => setForm({ ...form, label: e.target.value })}
+        />
 
-      <input
-        className="border w-full mb-2 p-2 rounded"
-        placeholder="Address Line"
+        <input
+          className="input"
+          placeholder="City"
+          value={form.city}
+          onChange={(e) => setForm({ ...form, city: e.target.value })}
+        />
+
+        <input
+          className="input"
+          placeholder="State"
+          value={form.state}
+          onChange={(e) => setForm({ ...form, state: e.target.value })}
+        />
+
+        <input
+          className="input"
+          placeholder="Pincode"
+          value={form.pincode}
+          onChange={(e) => setForm({ ...form, pincode: e.target.value })}
+        />
+      </div>
+
+      <textarea
+        className="input mt-4"
+        placeholder="Full Address Line"
         value={form.addressLine}
         onChange={(e) => setForm({ ...form, addressLine: e.target.value })}
       />
 
-      <input
-        className="border w-full mb-2 p-2 rounded"
-        placeholder="City"
-        value={form.city}
-        onChange={(e) => setForm({ ...form, city: e.target.value })}
-      />
-
-      <input
-        className="border w-full mb-2 p-2 rounded"
-        placeholder="State"
-        value={form.state}
-        onChange={(e) => setForm({ ...form, state: e.target.value })}
-      />
-
-      <input
-        className="border w-full mb-3 p-2 rounded"
-        placeholder="Pincode"
-        value={form.pincode}
-        onChange={(e) => setForm({ ...form, pincode: e.target.value })}
-      />
-
-      <div className="flex gap-2">
+      <div className="flex gap-3 mt-5">
         <button
           onClick={onSave}
-          className="bg-green-600 text-white px-4 py-2 rounded"
+          className="
+            flex-1 py-3 rounded-2xl
+            bg-gradient-to-r from-orange-500 to-green-500
+            text-white font-semibold
+            hover:scale-[1.02] active:scale-95
+            transition
+          "
         >
           {editingId ? "Update Address" : "Save Address"}
         </button>
@@ -59,7 +74,11 @@ export default function AddressForm({
         {editingId && (
           <button
             onClick={onCancel}
-            className="bg-gray-400 text-white px-4 py-2 rounded"
+            className="
+              px-6 py-3 rounded-2xl
+              bg-gray-200 dark:bg-white/10
+              text-gray-700 dark:text-white
+            "
           >
             Cancel
           </button>
@@ -68,3 +87,5 @@ export default function AddressForm({
     </div>
   );
 }
+
+/* helper (put in global css or tailwind layer) */

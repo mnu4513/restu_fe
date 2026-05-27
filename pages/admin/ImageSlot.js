@@ -13,10 +13,7 @@ export default function ImageSlot({
   const [loading, setLoading] = useState(false);
 
   const uploadImage = async () => {
-    if (!file) {
-      toast.error("Please select file");
-      return;
-    }
+    if (!file) return toast.error("Please select a file");
 
     try {
       setLoading(true);
@@ -29,26 +26,30 @@ export default function ImageSlot({
         formData,
         {
           headers: {
-            Authorization: `Bearer ${user.token}`,
+            Authorization: `Bearer ${user?.token}`,
           },
         }
       );
 
       console.log("Upload response:", res.data);
 
-      // ✅ Correct extraction
-      const imageUrl = res.data?.data?.secure_url;
+      // ✅ safer extraction (handles multiple backend formats)
+      const imageUrl =
+        res.data?.data?.secure_url ||
+        res.data?.data?.url ||
+        res.data?.secure_url ||
+        res.data?.url ||
+        "";
 
       if (!imageUrl) {
         toast.error("Upload response invalid");
         return;
       }
 
-      onChange(imageUrl); // store full URL directly
-
+      onChange(imageUrl);
       toast.success("Image uploaded");
-      setFile(null);
 
+      setFile(null);
     } catch (err) {
       console.error("Upload error:", err);
       toast.error("Upload failed");
@@ -58,11 +59,36 @@ export default function ImageSlot({
   };
 
   return (
-    <div className="border rounded-xl p-3 bg-gray-50 dark:bg-gray-800">
-      <p className="text-sm font-medium mb-2">{label}</p>
+    <div
+      className="
+        group
+        rounded-2xl
+        border border-gray-200 dark:border-white/10
+        bg-white/70 dark:bg-white/[0.03]
+        backdrop-blur-xl
+        p-3
+        shadow-sm
+        hover:shadow-lg
+        transition-all
+      "
+    >
+      {/* Label */}
+      <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">
+        {label}
+      </p>
 
       {/* Preview */}
-      <div className="w-full aspect-square border rounded-lg flex items-center justify-center overflow-hidden mb-3 bg-white dark:bg-gray-900">
+      <div
+        className="
+          w-full aspect-square
+          rounded-xl
+          overflow-hidden
+          border border-gray-200 dark:border-white/10
+          bg-gray-50 dark:bg-gray-900
+          flex items-center justify-center
+          mb-3
+        "
+      >
         {value ? (
           <img
             src={value}
@@ -70,35 +96,70 @@ export default function ImageSlot({
             className="w-full h-full object-cover"
           />
         ) : (
-          <span className="text-gray-400 text-sm">No Image</span>
+          <span className="text-gray-400 text-xs">No Image</span>
         )}
       </div>
 
-      {/* Browse */}
+      {/* File input */}
       <input
         type="file"
         accept="image/*"
-        onChange={(e) => setFile(e.target.files[0])}
-        className="w-full text-sm mb-2"
+        onChange={(e) => setFile(e.target.files?.[0])}
+        className="
+          w-full text-xs
+          text-gray-600 dark:text-gray-300
+          mb-3
+        "
       />
 
       {/* Buttons */}
       <div className="flex gap-2">
         <button
           onClick={uploadImage}
-          disabled={loading}
-          className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm"
+          disabled={loading || !file}
+          className="
+            flex-1
+            py-2
+            rounded-xl
+            text-xs font-semibold
+            text-white
+            bg-gradient-to-r from-green-500 to-emerald-600
+            hover:scale-[1.02]
+            active:scale-95
+            disabled:opacity-50
+            transition
+          "
         >
           {loading ? "Uploading..." : "Upload"}
         </button>
 
         <button
-          onClick={() => onChange("")}
-          className="flex-1 bg-gray-400 text-white py-2 rounded-lg text-sm"
+          onClick={() => {
+            setFile(null);
+            onChange("");
+          }}
+          className="
+            flex-1
+            py-2
+            rounded-xl
+            text-xs font-semibold
+            bg-gray-200 dark:bg-white/10
+            text-gray-700 dark:text-gray-200
+            hover:scale-[1.02]
+            active:scale-95
+            transition
+          "
         >
           Clear
         </button>
       </div>
+
+      {/* loading bar */}
+      {loading && (
+        <div className="mt-3 h-1 w-full bg-gray-200 dark:bg-white/10 rounded overflow-hidden">
+          <div className="h-full bg-green-500 animate-pulse w-full" />
+        </div>
+      )}
     </div>
   );
 }

@@ -12,21 +12,21 @@ export default function Cart() {
   const { user, loading } = useContext(AuthContext);
   const router = useRouter();
 
-  if (user?.role === "admin") {
-    toast.error("Admin can't place order");
-    router.replace("/admin");
-  }
-
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState("");
-  const [newAddress, setNewAddress] = useState({ label: "", addressLine: "", city: "", state: "", pincode: "" });
+  const [newAddress, setNewAddress] = useState({
+    label: "",
+    addressLine: "",
+    city: "",
+    state: "",
+    pincode: "",
+  });
   const [addingNew, setAddingNew] = useState(false);
 
-  const API = BackendAPI || "";  // "" means relative
+  const API = BackendAPI || "";
 
-  // ✅ Fetch addresses
   useEffect(() => {
-        if (loading) return;
+    if (loading) return;
 
     if (!user) {
       toast.error("Please login first");
@@ -34,31 +34,35 @@ export default function Cart() {
       return;
     }
 
-    if (user) {
-      api.get(`${API}/api/addresses`, {
+    if (user.role === "admin") {
+      toast.error("Admin can't place order");
+      router.replace("/admin");
+    }
+
+    api
+      .get(`${API}/api/addresses`, {
         headers: { Authorization: `Bearer ${user.token}` },
       })
       .then((res) => {
-        setAddresses(Array.isArray(res.data) ? res.data : []);
-        const def = res.data.find((a) => a.isDefault);
+        setAddresses(res.data || []);
+        const def = res.data?.find((a) => a.isDefault);
         if (def) setSelectedAddress(def._id);
       })
       .catch(() => toast.error("Failed to load addresses"));
-    }
-  }, [user, loading, router]);
+  }, [user, loading]);
 
-const total = Number(
-  cart.reduce(
-    (sum, i) =>
-      sum +
-      (i.price - (i.price * (i.discount || 0)) / 100) *
-        (i.quantity || 1),
-    0
-  ).toFixed(2)
-);
+  const total = Number(
+    cart
+      .reduce(
+        (sum, i) =>
+          sum +
+          (i.price - (i.price * (i.discount || 0)) / 100) *
+            (i.quantity || 1),
+        0
+      )
+      .toFixed(2)
+  );
 
-
-  // ✅ Add new address inline
   const saveNewAddress = async () => {
     try {
       const { data } = await api.post(
@@ -66,26 +70,25 @@ const total = Number(
         newAddress,
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
-      toast.success("New address added!");
+
+      toast.success("Address added");
       setAddresses([...addresses, data]);
       setSelectedAddress(data._id);
-      setNewAddress({ label: "", addressLine: "", city: "", state: "", pincode: "" });
+      setNewAddress({
+        label: "",
+        addressLine: "",
+        city: "",
+        state: "",
+        pincode: "",
+      });
       setAddingNew(false);
     } catch {
       toast.error("Failed to save address");
     }
   };
 
-  // ✅ Checkout with Razorpay
   const checkout = async () => {
-    if (!user) {
-      toast.error("Please login first!");
-      return;
-    }
-    if (!selectedAddress) {
-      toast.error("Please select a delivery address!");
-      return;
-    }
+    if (!selectedAddress) return toast.error("Select address first");
 
     try {
       const { data: orderData } = await api.post(
@@ -99,144 +102,157 @@ const total = Number(
         amount: orderData.amount,
         currency: "INR",
         name: "MyRestaurant",
-        description: "Food Order Payment",
         order_id: orderData.id,
         handler: async function (response) {
-  try {
-    await api.post(
-      `${API}/api/payment/verify`,
-      {
-        ...response,                // payment_id, order_id, signature
-        items: cart,                // cart items
-        addressId: selectedAddress, // delivery address
-      },
-      { headers: { Authorization: `Bearer ${user.token}` } }
-    );
-    toast.success("Payment successful! 🎉 Order placed");
-    clearCart();
-    router.push("/orders");
-  } catch (err) {
-    console.error(err.response?.data || err.message);
-    toast.error("Payment verification failed");
-  }
-},
+          try {
+            await api.post(
+              `${API}/api/payment/verify`,
+              {
+                ...response,
+                items: cart,
+                addressId: selectedAddress,
+              },
+              { headers: { Authorization: `Bearer ${user.token}` } }
+            );
+
+            toast.success("Order placed 🎉");
+            clearCart();
+            router.push("/orders");
+          } catch {
+            toast.error("Payment verification failed");
+          }
+        },
         prefill: { name: user.name, email: user.email },
         theme: { color: "#10b981" },
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", () => toast.error("Payment failed, try again"));
-      rzp.open();
+      new window.Razorpay(options).open();
     } catch {
-      toast.error("Error starting payment");
+      toast.error("Payment init failed");
     }
   };
 
   return (
-    <div className="p-6 max-w-7xl m-auto">
-      <h2 className="text-3xl font-bold mb-6">Checkout</h2>
+    <main className="min-h-screen bg-white dark:bg-[#0b0f19] relative overflow-hidden">
+      
+      {/* background glow */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-[-120px] left-[-120px] w-80 h-80 bg-orange-500/10 blur-3xl rounded-full" />
+        <div className="absolute bottom-[-120px] right-[-120px] w-80 h-80 bg-green-500/10 blur-3xl rounded-full" />
+      </div>
 
-      {/* ✅ Address Section */}
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-3">Delivery Address</h3>
+      <div className="relative z-10 max-w-6xl mx-auto px-4 py-12">
 
-        {addresses.length > 0 && (
-          <select
-            value={selectedAddress}
-            onChange={(e) => setSelectedAddress(e.target.value)}
-            className="border p-2 rounded w-full mb-3"
-          >
-            <option value="">-- Select Address --</option>
-            {addresses.map((addr) => (
-              <option key={addr._id} value={addr._id}>
-                {addr.label}: {addr.addressLine}, {addr.city}
-              </option>
-            ))}
-          </select>
-        )}
+        {/* HEADER */}
+        <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mb-8">
+          🛒 Checkout
+        </h2>
 
-        {!addingNew ? (
-          <button
-            onClick={() => setAddingNew(true)}
-            className="bg-blue-500 text-white px-3 py-2 rounded"
-          >
-            + Add New Address
-          </button>
-        ) : (
-          <div className="border p-4 rounded mt-3">
-            <input
-              className="border w-full mb-2 p-2"
-              placeholder="Label (Home, Work)"
-              value={newAddress.label}
-              onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
-            />
-            <input
-              className="border w-full mb-2 p-2"
-              placeholder="Address Line"
-              value={newAddress.addressLine}
-              onChange={(e) => setNewAddress({ ...newAddress, addressLine: e.target.value })}
-            />
-            <input
-              className="border w-full mb-2 p-2"
-              placeholder="City"
-              value={newAddress.city}
-              onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-            />
-            <input
-              className="border w-full mb-2 p-2"
-              placeholder="State"
-              value={newAddress.state}
-              onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
-            />
-            <input
-              className="border w-full mb-2 p-2"
-              placeholder="Pincode"
-              value={newAddress.pincode}
-              onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
-            />
-            <div className="flex gap-2">
+        <div className="grid lg:grid-cols-3 gap-8">
+
+          {/* LEFT: CART ITEMS */}
+          <div className="lg:col-span-2 space-y-4">
+            {cart.length === 0 ? (
+              <div className="text-center py-20 text-gray-500 dark:text-gray-400">
+                Your cart is empty 🛒
+              </div>
+            ) : (
+              cart.map((item) => (
+                <CartItem key={item._id} item={item} />
+              ))
+            )}
+          </div>
+
+          {/* RIGHT: SUMMARY */}
+          <div className="space-y-6">
+
+            {/* ADDRESS BOX */}
+            <div className="p-5 rounded-3xl border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl">
+              <h3 className="font-bold text-gray-900 dark:text-white mb-3">
+                📍 Delivery Address
+              </h3>
+
+              {addresses.length > 0 && (
+                <select
+                  className="w-full p-3 rounded-2xl border dark:border-white/10 bg-white dark:bg-white/[0.02]"
+                  value={selectedAddress}
+                  onChange={(e) => setSelectedAddress(e.target.value)}
+                >
+                  <option value="">Select address</option>
+                  {addresses.map((a) => (
+                    <option key={a._id} value={a._id}>
+                      {a.label} - {a.city}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {!addingNew ? (
+                <button
+                  onClick={() => setAddingNew(true)}
+                  className="mt-3 w-full py-2 rounded-2xl bg-blue-500 text-white"
+                >
+                  + Add New Address
+                </button>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {["label", "addressLine", "city", "state", "pincode"].map(
+                    (field) => (
+                      <input
+                        key={field}
+                        placeholder={field}
+                        value={newAddress[field]}
+                        onChange={(e) =>
+                          setNewAddress({
+                            ...newAddress,
+                            [field]: e.target.value,
+                          })
+                        }
+                        className="w-full p-2 rounded-xl border dark:border-white/10"
+                      />
+                    )
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={saveNewAddress}
+                      className="flex-1 bg-green-600 text-white py-2 rounded-xl"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setAddingNew(false)}
+                      className="flex-1 bg-gray-400 text-white py-2 rounded-xl"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* BILL */}
+            <div className="p-6 rounded-3xl border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Bill Summary
+              </h3>
+
+              <div className="flex justify-between mt-4 text-gray-600 dark:text-gray-300">
+                <span>Total</span>
+                <span className="font-bold text-green-600">₹{total}</span>
+              </div>
+
               <button
-                onClick={saveNewAddress}
-                className="bg-green-600 text-white px-4 py-2 rounded"
+                onClick={checkout}
+                disabled={!cart.length || !selectedAddress}
+                className="mt-5 w-full py-3 rounded-2xl font-semibold text-white bg-gradient-to-r from-green-500 to-orange-500 disabled:opacity-50"
               >
-                Save Address
-              </button>
-              <button
-                onClick={() => setAddingNew(false)}
-                className="bg-gray-400 text-white px-4 py-2 rounded"
-              >
-                Cancel
+                Pay & Place Order
               </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
-
-      {/* ✅ Cart Section */}
-{cart.length === 0 ? (
-  <p>Your cart is empty 🛒</p>
-) : (
-  <div>
-    {cart.map((item) => (
-      <CartItem key={item._id} item={item} />
-    ))}
-
-    <h3 className="text-xl font-bold mt-6">Total: ₹{total}</h3>
-
-    {/* Checkout button */}
-    <button
-      onClick={checkout}
-      disabled={cart.length === 0 || isNaN(total)}
-      className={`mt-4 px-4 py-2 rounded-lg text-white ${
-        cart.length === 0 || isNaN(total)
-          ? "bg-gray-400 cursor-not-allowed"
-          : "bg-green-600 hover:bg-green-700"
-      }`}
-    >
-      Pay & Checkout
-    </button>
-  </div>
-)}
-    </div>
+    </main>
   );
 }

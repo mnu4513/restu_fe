@@ -22,7 +22,6 @@ export default function AddressPage() {
 
   const API = BackendAPI || "";
 
-  // ✅ AUTH GUARD
   useEffect(() => {
     if (loading) return;
 
@@ -36,9 +35,8 @@ export default function AddressPage() {
       toast.error("Admin doesn't need address");
       router.replace("/admin");
     }
-  }, [user, loading, router]);
+  }, [user, loading]);
 
-  // ✅ LOAD ADDRESSES
   useEffect(() => {
     if (!user) return;
 
@@ -50,7 +48,6 @@ export default function AddressPage() {
       .catch(() => toast.error("Failed to load addresses"));
   }, [user]);
 
-  // ✅ SAVE ADDRESS
   const saveAddress = async () => {
     try {
       if (editingId) {
@@ -98,6 +95,7 @@ export default function AddressPage() {
       await api.delete(`${API}/api/addresses/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
+
       setAddresses(addresses.filter((a) => a._id !== id));
       toast.success("Deleted");
     } catch {
@@ -108,77 +106,117 @@ export default function AddressPage() {
   if (!user) return null;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h2 className="text-3xl font-bold mb-6">My Addresses</h2>
+    <main className="min-h-screen bg-white dark:bg-[#0b0f19] relative overflow-hidden">
+      
+      {/* Glow background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-[-120px] left-[-120px] w-80 h-80 bg-orange-500/10 blur-3xl rounded-full" />
+        <div className="absolute bottom-[-120px] right-[-120px] w-80 h-80 bg-green-500/10 blur-3xl rounded-full" />
+      </div>
 
-      <AddressForm
-        form={form}
-        setForm={setForm}
-        editingId={editingId}
-        onSave={saveAddress}
-        onCancel={resetForm}
-      />
+      <div className="relative z-10 max-w-6xl mx-auto px-4 py-12">
 
-      {addresses.length === 0 ? (
-        <p>No addresses saved yet</p>
-      ) : (
-        addresses.map((a) => (
-          <div
-            key={a._id}
-            className="border p-4 rounded mb-3 flex justify-between items-center"
-          >
-            <div>
-              <strong>{a.label}</strong>
-              <p>
-                {a.addressLine}, {a.city}, {a.state} - {a.pincode}
-              </p>
+        {/* TITLE */}
+        <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mb-8">
+          🏠 My Addresses
+        </h2>
+
+        {/* FORM */}
+        <AddressForm
+          form={form}
+          setForm={setForm}
+          editingId={editingId}
+          onSave={saveAddress}
+          onCancel={resetForm}
+        />
+
+        {/* LIST */}
+        <div className="space-y-4 mt-8">
+          {addresses.length === 0 ? (
+            <div className="text-center py-16 text-gray-500 dark:text-gray-400">
+              No addresses saved yet
             </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => startEdit(a)}
-                className="bg-blue-500 text-white px-3 py-1 rounded"
+          ) : (
+            addresses.map((a) => (
+              <div
+                key={a._id}
+                className="
+                  group
+                  rounded-3xl
+                  border border-gray-200 dark:border-white/10
+                  bg-white/70 dark:bg-white/[0.03]
+                  backdrop-blur-xl
+                  p-5 md:p-6
+                  flex flex-col md:flex-row md:items-center md:justify-between
+                  gap-4
+                  hover:shadow-xl
+                  transition
+                "
               >
-                Edit
-              </button>
+                {/* LEFT */}
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-bold text-gray-900 dark:text-white">
+                      {a.label}
+                    </h3>
 
-              <button
-                onClick={() => deleteAddress(a._id)}
-                className="bg-red-500 text-white px-3 py-1 rounded"
-              >
-                Delete
-              </button>
+                    {a.isDefault && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-green-500 text-white">
+                        Default
+                      </span>
+                    )}
+                  </div>
 
-              {a.isDefault ? (
-                <span className="px-3 py-1 bg-green-600 text-white rounded">
-                  Default
-                </span>
-              ) : (
-                <button
-                  onClick={async () => {
-                    const { data } = await api.put(
-                      `${API}/api/addresses/${a._id}/default`,
-                      {},
-                      { headers: { Authorization: `Bearer ${user.token}` } }
-                    );
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    {a.addressLine}, {a.city}, {a.state} - {a.pincode}
+                  </p>
+                </div>
 
-                    setAddresses(
-                      addresses.map((addr) => ({
-                        ...addr,
-                        isDefault: addr._id === data._id,
-                      }))
-                    );
-                    toast.success("Default updated");
-                  }}
-                  className="bg-yellow-500 text-white px-3 py-1 rounded"
-                >
-                  Set Default
-                </button>
-              )}
-            </div>
-          </div>
-        ))
-      )}
-    </div>
+                {/* ACTIONS */}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => startEdit(a)}
+                    className="px-4 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => deleteAddress(a._id)}
+                    className="px-4 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition"
+                  >
+                    Delete
+                  </button>
+
+                  {!a.isDefault && (
+                    <button
+                      onClick={async () => {
+                        const { data } = await api.put(
+                          `${API}/api/addresses/${a._id}/default`,
+                          {},
+                          { headers: { Authorization: `Bearer ${user.token}` } }
+                        );
+
+                        setAddresses(
+                          addresses.map((addr) => ({
+                            ...addr,
+                            isDefault: addr._id === data._id,
+                          }))
+                        );
+
+                        toast.success("Default updated");
+                      }}
+                      className="px-4 py-2 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 transition"
+                    >
+                      Set Default
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </main>
   );
 }
