@@ -4,7 +4,6 @@ import api from "@/utils/axios";
 import { AuthContext } from "@/context/AuthContext";
 import Loader from "@/components/Loader";
 import toast from "react-hot-toast";
-import { BackendAPI } from "@/utils/api";
 import AdminItemCard from "@/components/admin/AdminItemCard";
 import MenuForm from "./MenuForm";
 import { motion } from "framer-motion";
@@ -16,7 +15,7 @@ export default function AdminMenu() {
   const [menu, setMenu] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const API = BackendAPI || "";
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   const [form, setForm] = useState({
     _id: "",
@@ -26,12 +25,18 @@ export default function AdminMenu() {
     images: [],
     price: "",
     discount: 0,
-    category: "other",
+
+    // Major category
+    category: "food",
+
+    // Sub-category
+    subCategory: "main",
   });
 
   // AUTH GUARD
   useEffect(() => {
     if (authLoading) return;
+
     if (!user || user.role !== "admin") {
       router.replace("/login");
       setLoading(false);
@@ -46,19 +51,28 @@ export default function AdminMenu() {
 
     const fetchMenu = async () => {
       setLoading(true);
+
       try {
         const { data } = await api.get(`${API}/api/menu`);
-        if (mounted) setMenu(Array.isArray(data) ? data : []);
+
+        if (mounted) {
+          setMenu(Array.isArray(data) ? data : []);
+        }
       } catch (err) {
         console.error(err);
         toast.error("Failed to load menu");
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchMenu();
-    return () => (mounted = false);
+
+    return () => {
+      mounted = false;
+    };
   }, [user, API]);
 
   // SAVE MENU ITEM
@@ -71,25 +85,52 @@ export default function AdminMenu() {
       };
 
       if (payload._id) {
+        // UPDATE
         const { data } = await api.put(
           `${API}/api/menu/${payload._id}`,
           payload,
           {
-            headers: { Authorization: `Bearer ${user.token}` },
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+            },
           }
         );
 
-        setMenu((prev) => prev.map((m) => (m._id === data._id ? data : m)));
+        // Backend returns:
+        // { success: true, message: "...", item: updatedItem }
+
+        const updatedItem = data.item;
+
+        setMenu((prev) =>
+          prev.map((m) =>
+            m._id === updatedItem._id ? updatedItem : m
+          )
+        );
+
         toast.success("Item updated");
       } else {
-        const { data } = await api.post(`${API}/api/menu`, payload, {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
+        // CREATE
+        const { data } = await api.post(
+          `${API}/api/menu`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        );
 
-        setMenu((prev) => [...prev, data]);
+        // Backend returns:
+        // { success: true, message: "...", item: newItem }
+
+        const newItem = data.item;
+
+        setMenu((prev) => [...prev, newItem]);
+
         toast.success("Item added");
       }
 
+      // RESET FORM
       setForm({
         _id: "",
         name: "",
@@ -98,11 +139,17 @@ export default function AdminMenu() {
         images: [],
         price: "",
         discount: 0,
-        category: "other",
+        category: "food",
+        subCategory: "main",
       });
+
     } catch (err) {
       console.error(err);
-      toast.error("Save failed");
+
+      const message =
+        err?.response?.data?.message || "Save failed";
+
+      toast.error(message);
     }
   };
 
@@ -110,17 +157,27 @@ export default function AdminMenu() {
   const deleteMenuItem = async (id) => {
     try {
       await api.delete(`${API}/api/menu/${id}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
       });
 
-      setMenu((prev) => prev.filter((m) => m._id !== id));
+      setMenu((prev) =>
+        prev.filter((m) => m._id !== id)
+      );
+
       toast.success("Deleted");
     } catch (err) {
       console.error(err);
-      toast.error("Delete failed");
+
+      const message =
+        err?.response?.data?.message || "Delete failed";
+
+      toast.error(message);
     }
   };
 
+  // EDIT
   const handleEdit = (item) => {
     setForm({
       _id: item._id,
@@ -129,8 +186,13 @@ export default function AdminMenu() {
       thumbnail: item.thumbnail,
       images: item.images || [],
       price: item.price,
-      discount: item.discount,
+      discount: item.discount ?? 0,
+
+      // Major category
       category: item.category,
+
+      // Sub-category
+      subCategory: item.subCategory,
     });
 
     document.getElementById("menu-form")?.scrollIntoView({
@@ -138,8 +200,13 @@ export default function AdminMenu() {
     });
   };
 
-  if (authLoading || loading) return <Loader />;
-  if (!user || user.role !== "admin") return null;
+  if (authLoading || loading) {
+    return <Loader />;
+  }
+
+  if (!user || user.role !== "admin") {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-white dark:bg-[#0b0f19] p-6">
@@ -157,10 +224,11 @@ export default function AdminMenu() {
           "
         >
           <h2 className="text-3xl font-black text-gray-900 dark:text-white">
-            🍔 Manage Menu
+            🍔 Manage Food & Store
           </h2>
+
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Create, update, and manage food items
+            Create, update, and manage food and everyday items
           </p>
         </motion.div>
 
@@ -190,4 +258,4 @@ export default function AdminMenu() {
       </div>
     </main>
   );
-}
+};

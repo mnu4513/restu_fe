@@ -5,7 +5,6 @@ import { AuthContext } from "@/context/AuthContext";
 import Loader from "@/components/Loader";
 import toast from "react-hot-toast";
 import io from "socket.io-client";
-import { BackendAPI } from "@/utils/api";
 
 import { AnimatePresence, motion } from "framer-motion";
 import AdminOrderCard from "@/components/admin/AdminOrderCard";
@@ -23,7 +22,7 @@ export default function AdminOrders() {
   const [pages, setPages] = useState(1);
   const [lastSearch, setLastSearch] = useState("");
 
-  const API = BackendAPI || "";
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   // ================= AUTH GUARD =================
   useEffect(() => {

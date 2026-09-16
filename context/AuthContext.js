@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect } from "react";
 import api from "@/utils/axios";
-import { BackendAPI } from "@/utils/api";
+
 
 export const AuthContext = createContext();
 
@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(undefined);
   const [loading, setLoading] = useState(true);
 
-  const API = BackendAPI || ""; // "" means relative
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   // ✅ Load user from localStorage on refresh
   useEffect(() => {

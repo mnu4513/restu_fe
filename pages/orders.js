@@ -5,7 +5,6 @@ import api from "@/utils/axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import io from "socket.io-client";
-import { BackendAPI } from "@/utils/api";
 
 import ReorderModal from "@/components/ReorderModal";
 import OrderCard from "@/components/OrderCard";
@@ -21,7 +20,7 @@ export default function Orders() {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const router = useRouter();
-  const API = BackendAPI || "";
+  const API = process.env.NEXT_PUBLIC_API_URL;
   const socketRef = useRef(null);
 
   useEffect(() => {

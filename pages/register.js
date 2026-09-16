@@ -3,7 +3,6 @@ import { AuthContext } from "@/context/AuthContext";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
 import api from "@/utils/axios";
-import { BackendAPI } from "@/utils/api";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Register() {
@@ -20,7 +19,7 @@ export default function Register() {
     password: "",
   });
 
-  const API = BackendAPI || "";
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   const handleSendOtp = async (e) => {
     e.preventDefault();

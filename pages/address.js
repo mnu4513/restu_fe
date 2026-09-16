@@ -2,7 +2,6 @@ import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
-import { BackendAPI } from "@/utils/api";
 import { useRouter } from "next/router";
 import AddressForm from "@/components/address/AddressForm";
 
@@ -20,7 +19,7 @@ export default function AddressPage() {
   });
   const [editingId, setEditingId] = useState(null);
 
-  const API = BackendAPI || "";
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     if (loading) return;

@@ -28,10 +28,9 @@ export default function Navbar() {
       "
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
         <div className="flex items-center justify-between h-16">
 
-          {/* BRAND */}
+          {/* ================= BRAND ================= */}
           <Link
             href="/"
             className="
@@ -44,15 +43,31 @@ export default function Navbar() {
             🍴 MyRestaurant
           </Link>
 
-          {/* DESKTOP MENU */}
+          {/* ================= DESKTOP MENU ================= */}
           <div className="hidden md:flex items-center gap-7">
 
-            <NavLink href="/menu" active={router.pathname === "/menu"}>
-              Menu
+            {/* FOOD */}
+            <NavLink
+              href="/food"
+              active={router.pathname === "/food"}
+            >
+              Food
             </NavLink>
 
+            {/* STORE */}
+            <NavLink
+              href="/store"
+              active={router.pathname === "/store"}
+            >
+              Store
+            </NavLink>
+
+            {/* CART */}
             {user?.role !== "admin" && (
-              <NavLink href="/cart" active={router.pathname === "/cart"}>
+              <NavLink
+                href="/cart"
+                active={router.pathname === "/cart"}
+              >
                 Cart{" "}
                 {cartCount > 0 && (
                   <span
@@ -70,23 +85,31 @@ export default function Navbar() {
               </NavLink>
             )}
 
+            {/* ORDERS */}
             {user && user.role !== "admin" && (
-              <NavLink href="/orders" active={router.pathname === "/orders"}>
+              <NavLink
+                href="/orders"
+                active={router.pathname === "/orders"}
+              >
                 Orders
               </NavLink>
             )}
 
+            {/* ADMIN */}
             {user?.role === "admin" && (
-              <NavLink href="/admin" active={router.pathname === "/admin"}>
+              <NavLink
+                href="/admin"
+                active={router.pathname === "/admin"}
+              >
                 Admin
               </NavLink>
             )}
 
-            {/* AUTH */}
+            {/* ================= AUTH ================= */}
             {user ? (
               <div className="flex items-center gap-3">
 
-                {/* Profile */}
+                {/* PROFILE */}
                 <Link href="/profile">
                   <div
                     className="
@@ -102,7 +125,7 @@ export default function Navbar() {
                   </div>
                 </Link>
 
-                {/* Logout */}
+                {/* LOGOUT */}
                 <button
                   onClick={() => {
                     logout();
@@ -121,30 +144,65 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <NavLink href="/login">Login</NavLink>
-                <NavLink href="/register">Register</NavLink>
+                <NavLink href="/login">
+                  Login
+                </NavLink>
+
+                <NavLink href="/register">
+                  Register
+                </NavLink>
               </div>
             )}
 
+            {/* DARK MODE */}
             <DarkModeToggle />
           </div>
 
-          {/* MOBILE BUTTON */}
+          {/* ================= MOBILE BUTTON ================= */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden relative w-10 h-10 flex flex-col justify-center items-center"
+            className="
+              md:hidden
+              relative
+              w-10 h-10
+              flex flex-col
+              justify-center
+              items-center
+            "
           >
             <motion.span
-              animate={{ rotate: menuOpen ? 45 : 0, y: menuOpen ? 6 : 0 }}
-              className="w-6 h-[2px] bg-gray-900 dark:bg-white rounded"
+              animate={{
+                rotate: menuOpen ? 45 : 0,
+                y: menuOpen ? 6 : 0,
+              }}
+              className="
+                w-6 h-[2px]
+                bg-gray-900 dark:bg-white
+                rounded
+              "
             />
+
             <motion.span
-              animate={{ opacity: menuOpen ? 0 : 1 }}
-              className="w-6 h-[2px] bg-gray-900 dark:bg-white my-1 rounded"
+              animate={{
+                opacity: menuOpen ? 0 : 1,
+              }}
+              className="
+                w-6 h-[2px]
+                bg-gray-900 dark:bg-white
+                my-1 rounded
+              "
             />
+
             <motion.span
-              animate={{ rotate: menuOpen ? -45 : 0, y: menuOpen ? -6 : 0 }}
-              className="w-6 h-[2px] bg-gray-900 dark:bg-white rounded"
+              animate={{
+                rotate: menuOpen ? -45 : 0,
+                y: menuOpen ? -6 : 0,
+              }}
+              className="
+                w-6 h-[2px]
+                bg-gray-900 dark:bg-white
+                rounded
+              "
             />
           </button>
         </div>
@@ -154,44 +212,85 @@ export default function Navbar() {
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{
+              opacity: 0,
+              y: -20,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              y: -20,
+            }}
             className="
               md:hidden
               bg-white dark:bg-[#0b0f19]
               border-t border-gray-200 dark:border-white/10
-              px-6 py-6 space-y-4
+              px-6 py-6
+              space-y-4
             "
           >
-            <MobileLink href="/menu" setMenuOpen={setMenuOpen}>
-              Menu
+
+            {/* FOOD */}
+            <MobileLink
+              href="/food"
+              setMenuOpen={setMenuOpen}
+            >
+              Food
             </MobileLink>
 
+            {/* STORE */}
+            <MobileLink
+              href="/store"
+              setMenuOpen={setMenuOpen}
+            >
+              Store
+            </MobileLink>
+
+            {/* CART */}
             {user?.role !== "admin" && (
-              <MobileLink href="/cart" setMenuOpen={setMenuOpen}>
+              <MobileLink
+                href="/cart"
+                setMenuOpen={setMenuOpen}
+              >
                 Cart {cartCount > 0 && `(${cartCount})`}
               </MobileLink>
             )}
 
+            {/* ORDERS */}
             {user && user.role !== "admin" && (
-              <MobileLink href="/orders" setMenuOpen={setMenuOpen}>
+              <MobileLink
+                href="/orders"
+                setMenuOpen={setMenuOpen}
+              >
                 Orders
               </MobileLink>
             )}
 
+            {/* ADMIN */}
             {user?.role === "admin" && (
-              <MobileLink href="/admin" setMenuOpen={setMenuOpen}>
+              <MobileLink
+                href="/admin"
+                setMenuOpen={setMenuOpen}
+              >
                 Admin
               </MobileLink>
             )}
 
+            {/* ================= AUTH ================= */}
             {user ? (
               <>
-                <MobileLink href="/profile" setMenuOpen={setMenuOpen}>
+                {/* PROFILE */}
+                <MobileLink
+                  href="/profile"
+                  setMenuOpen={setMenuOpen}
+                >
                   Profile
                 </MobileLink>
 
+                {/* LOGOUT */}
                 <button
                   onClick={() => {
                     logout();
@@ -199,10 +298,12 @@ export default function Navbar() {
                     setMenuOpen(false);
                   }}
                   className="
-                    w-full text-left
+                    w-full
+                    text-left
                     px-4 py-2
                     rounded-xl
-                    bg-red-500 text-white
+                    bg-red-500
+                    text-white
                   "
                 >
                   Logout
@@ -210,15 +311,25 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <MobileLink href="/login" setMenuOpen={setMenuOpen}>
+                {/* LOGIN */}
+                <MobileLink
+                  href="/login"
+                  setMenuOpen={setMenuOpen}
+                >
                   Login
                 </MobileLink>
-                <MobileLink href="/register" setMenuOpen={setMenuOpen}>
+
+                {/* REGISTER */}
+                <MobileLink
+                  href="/register"
+                  setMenuOpen={setMenuOpen}
+                >
                   Register
                 </MobileLink>
               </>
             )}
 
+            {/* DARK MODE */}
             <div className="pt-2">
               <DarkModeToggle />
             </div>
@@ -230,19 +341,33 @@ export default function Navbar() {
 }
 
 /* ================= NAV LINK ================= */
+
 function NavLink({ href, children, active }) {
   return (
     <Link
       href={href}
-      className="relative text-gray-700 dark:text-gray-300 hover:text-orange-500 transition"
+      className="
+        group
+        relative
+        text-gray-700
+        dark:text-gray-300
+        hover:text-orange-500
+        transition
+      "
     >
       {children}
 
       <span
         className={`
-          absolute left-0 -bottom-1 h-[2px]
-          bg-gradient-to-r from-orange-500 to-green-500
-          transition-all duration-300
+          absolute
+          left-0
+          -bottom-1
+          h-[2px]
+          bg-gradient-to-r
+          from-orange-500
+          to-green-500
+          transition-all
+          duration-300
           ${active ? "w-full" : "w-0 group-hover:w-full"}
         `}
       />
@@ -251,6 +376,7 @@ function NavLink({ href, children, active }) {
 }
 
 /* ================= MOBILE LINK ================= */
+
 function MobileLink({ href, children, setMenuOpen }) {
   return (
     <Link
@@ -259,7 +385,8 @@ function MobileLink({ href, children, setMenuOpen }) {
       className="
         block
         py-2
-        text-gray-700 dark:text-gray-300
+        text-gray-700
+        dark:text-gray-300
         hover:text-orange-500
         transition
       "
@@ -267,4 +394,4 @@ function MobileLink({ href, children, setMenuOpen }) {
       {children}
     </Link>
   );
-}
+};

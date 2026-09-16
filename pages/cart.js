@@ -4,7 +4,6 @@ import { AuthContext } from "@/context/AuthContext";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
-import { BackendAPI } from "@/utils/api";
 import CartItem from "@/components/CartItem";
 
 export default function Cart() {
@@ -23,7 +22,7 @@ export default function Cart() {
   });
   const [addingNew, setAddingNew] = useState(false);
 
-  const API = BackendAPI || "";
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     if (loading) return;

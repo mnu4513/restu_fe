@@ -1,9 +1,8 @@
 import axios from "axios";
 import toast from "react-hot-toast";
-import { BackendAPI } from "@/utils/api";
 
 const api = axios.create({
-  baseURL: BackendAPI,
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
 

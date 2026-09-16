@@ -4,7 +4,6 @@ import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
-import { BackendAPI } from "@/utils/api";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 
@@ -15,7 +14,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const API = BackendAPI || "";
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   // ✅ SAFE ROUTING HANDLING
   useEffect(() => {
