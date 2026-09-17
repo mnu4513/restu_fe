@@ -13,9 +13,24 @@ export default function Navbar() {
   const { cart } = useContext(CartContext);
 
   const [menuOpen, setMenuOpen] = useState(false);
+
   const router = useRouter();
 
-  const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
+  const cartCount = cart.reduce(
+    (sum, i) => sum + i.quantity,
+    0
+  );
+
+  // ================= ROLE CHECKS =================
+
+  const isNormalUser =
+    user?.role === "user";
+
+  const isAdmin =
+    user?.role === "admin";
+
+  const isDelivery =
+    user?.role === "delivery";
 
   return (
     <nav
@@ -35,9 +50,13 @@ export default function Navbar() {
             href="/"
             className="
               text-xl font-black
-              bg-gradient-to-r from-orange-500 to-green-500
-              bg-clip-text text-transparent
-              hover:scale-105 transition
+              bg-gradient-to-r
+              from-orange-500
+              to-green-500
+              bg-clip-text
+              text-transparent
+              hover:scale-105
+              transition
             "
           >
             🍴 MyRestaurant
@@ -62,50 +81,71 @@ export default function Navbar() {
               Store
             </NavLink>
 
-            {/* CART */}
-            {user?.role !== "admin" && (
-              <NavLink
-                href="/cart"
-                active={router.pathname === "/cart"}
-              >
-                Cart{" "}
-                {cartCount > 0 && (
-                  <span
-                    className="
-                      ml-1 px-2 py-[2px]
-                      text-xs
-                      rounded-full
-                      bg-orange-500 text-white
-                      shadow-lg shadow-orange-500/30
-                    "
-                  >
-                    {cartCount}
-                  </span>
-                )}
-              </NavLink>
+            {/* ================= NORMAL USER ONLY ================= */}
+
+            {isNormalUser && (
+              <>
+                {/* CART */}
+                <NavLink
+                  href="/cart"
+                  active={router.pathname === "/cart"}
+                >
+                  Cart{" "}
+                  {cartCount > 0 && (
+                    <span
+                      className="
+                        ml-1 px-2 py-[2px]
+                        text-xs
+                        rounded-full
+                        bg-orange-500
+                        text-white
+                        shadow-lg
+                        shadow-orange-500/30
+                      "
+                    >
+                      {cartCount}
+                    </span>
+                  )}
+                </NavLink>
+
+                {/* ORDERS */}
+                <NavLink
+                  href="/orders"
+                  active={router.pathname === "/orders"}
+                >
+                  Orders
+                </NavLink>
+              </>
             )}
 
-            {/* ORDERS */}
-            {user && user.role !== "admin" && (
-              <NavLink
-                href="/orders"
-                active={router.pathname === "/orders"}
-              >
-                Orders
-              </NavLink>
-            )}
+            {/* ================= ADMIN ONLY ================= */}
 
-            {/* ADMIN */}
-            {user?.role === "admin" && (
+            {isAdmin && (
               <NavLink
                 href="/admin"
-                active={router.pathname === "/admin"}
+                active={
+                  router.pathname.startsWith("/admin")
+                }
               >
                 Admin
               </NavLink>
             )}
 
+            {/* ================= DELIVERY ONLY ================= */}
+
+            {isDelivery && (
+              <NavLink
+                href="/delivery"
+                active={
+                  router.pathname.startsWith("/delivery")
+                }
+              >
+                Delivery
+              </NavLink>
+            )}
+
             {/* ================= AUTH ================= */}
+
             {user ? (
               <div className="flex items-center gap-3">
 
@@ -113,15 +153,23 @@ export default function Navbar() {
                 <Link href="/profile">
                   <div
                     className="
-                      w-9 h-9 rounded-full
+                      w-9 h-9
+                      rounded-full
                       flex items-center justify-center
-                      bg-gradient-to-br from-orange-400 to-green-500
-                      text-white font-bold
+                      bg-gradient-to-br
+                      from-orange-400
+                      to-green-500
+                      text-white
+                      font-bold
                       shadow-md
-                      hover:scale-110 transition
+                      hover:scale-110
+                      transition
+                      cursor-pointer
                     "
                   >
-                    {user.name?.charAt(0).toUpperCase()}
+                    {user.name
+                      ?.charAt(0)
+                      .toUpperCase()}
                   </div>
                 </Link>
 
@@ -134,7 +182,8 @@ export default function Navbar() {
                   className="
                     px-4 py-2
                     rounded-xl
-                    bg-red-500/90 text-white
+                    bg-red-500/90
+                    text-white
                     hover:bg-red-600
                     transition
                   "
@@ -144,11 +193,22 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <NavLink href="/login">
+
+                {/* LOGIN */}
+                <NavLink
+                  href="/login"
+                  active={router.pathname === "/login"}
+                >
                   Login
                 </NavLink>
 
-                <NavLink href="/register">
+                {/* REGISTER */}
+                <NavLink
+                  href="/register"
+                  active={
+                    router.pathname === "/register"
+                  }
+                >
                   Register
                 </NavLink>
               </div>
@@ -159,6 +219,7 @@ export default function Navbar() {
           </div>
 
           {/* ================= MOBILE BUTTON ================= */}
+
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="
@@ -177,7 +238,8 @@ export default function Navbar() {
               }}
               className="
                 w-6 h-[2px]
-                bg-gray-900 dark:bg-white
+                bg-gray-900
+                dark:bg-white
                 rounded
               "
             />
@@ -188,8 +250,10 @@ export default function Navbar() {
               }}
               className="
                 w-6 h-[2px]
-                bg-gray-900 dark:bg-white
-                my-1 rounded
+                bg-gray-900
+                dark:bg-white
+                my-1
+                rounded
               "
             />
 
@@ -200,7 +264,8 @@ export default function Navbar() {
               }}
               className="
                 w-6 h-[2px]
-                bg-gray-900 dark:bg-white
+                bg-gray-900
+                dark:bg-white
                 rounded
               "
             />
@@ -209,6 +274,7 @@ export default function Navbar() {
       </div>
 
       {/* ================= MOBILE MENU ================= */}
+
       <AnimatePresence>
         {menuOpen && (
           <motion.div
@@ -226,8 +292,11 @@ export default function Navbar() {
             }}
             className="
               md:hidden
-              bg-white dark:bg-[#0b0f19]
-              border-t border-gray-200 dark:border-white/10
+              bg-white
+              dark:bg-[#0b0f19]
+              border-t
+              border-gray-200
+              dark:border-white/10
               px-6 py-6
               space-y-4
             "
@@ -249,28 +318,33 @@ export default function Navbar() {
               Store
             </MobileLink>
 
-            {/* CART */}
-            {user?.role !== "admin" && (
-              <MobileLink
-                href="/cart"
-                setMenuOpen={setMenuOpen}
-              >
-                Cart {cartCount > 0 && `(${cartCount})`}
-              </MobileLink>
+            {/* ================= NORMAL USER ================= */}
+
+            {isNormalUser && (
+              <>
+                {/* CART */}
+                <MobileLink
+                  href="/cart"
+                  setMenuOpen={setMenuOpen}
+                >
+                  Cart{" "}
+                  {cartCount > 0 &&
+                    `(${cartCount})`}
+                </MobileLink>
+
+                {/* ORDERS */}
+                <MobileLink
+                  href="/orders"
+                  setMenuOpen={setMenuOpen}
+                >
+                  Orders
+                </MobileLink>
+              </>
             )}
 
-            {/* ORDERS */}
-            {user && user.role !== "admin" && (
-              <MobileLink
-                href="/orders"
-                setMenuOpen={setMenuOpen}
-              >
-                Orders
-              </MobileLink>
-            )}
+            {/* ================= ADMIN ================= */}
 
-            {/* ADMIN */}
-            {user?.role === "admin" && (
+            {isAdmin && (
               <MobileLink
                 href="/admin"
                 setMenuOpen={setMenuOpen}
@@ -279,7 +353,19 @@ export default function Navbar() {
               </MobileLink>
             )}
 
+            {/* ================= DELIVERY ================= */}
+
+            {isDelivery && (
+              <MobileLink
+                href="/delivery"
+                setMenuOpen={setMenuOpen}
+              >
+                Delivery
+              </MobileLink>
+            )}
+
             {/* ================= AUTH ================= */}
+
             {user ? (
               <>
                 {/* PROFILE */}
@@ -342,7 +428,11 @@ export default function Navbar() {
 
 /* ================= NAV LINK ================= */
 
-function NavLink({ href, children, active }) {
+function NavLink({
+  href,
+  children,
+  active,
+}) {
   return (
     <Link
       href={href}
@@ -368,7 +458,11 @@ function NavLink({ href, children, active }) {
           to-green-500
           transition-all
           duration-300
-          ${active ? "w-full" : "w-0 group-hover:w-full"}
+          ${
+            active
+              ? "w-full"
+              : "w-0 group-hover:w-full"
+          }
         `}
       />
     </Link>
@@ -377,7 +471,11 @@ function NavLink({ href, children, active }) {
 
 /* ================= MOBILE LINK ================= */
 
-function MobileLink({ href, children, setMenuOpen }) {
+function MobileLink({
+  href,
+  children,
+  setMenuOpen,
+}) {
   return (
     <Link
       href={href}
@@ -394,4 +492,4 @@ function MobileLink({ href, children, setMenuOpen }) {
       {children}
     </Link>
   );
-};
+}

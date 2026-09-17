@@ -23,16 +23,22 @@ export default function Orders() {
   const API = process.env.NEXT_PUBLIC_API_URL;
   const socketRef = useRef(null);
 
+  // ================= AUTH GUARD =================
   useEffect(() => {
     if (authLoading) return;
-    if (user === null) router.replace("/login");
+
+    if (user === null) {
+      router.replace("/login");
+      return;
+    }
 
     if (user?.role === "admin") {
       toast.error("Admin can't place order");
       router.replace("/admin");
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, router]);
 
+  // ================= FETCH ORDERS + SOCKET =================
   useEffect(() => {
     if (authLoading || !user) return;
 
@@ -40,34 +46,83 @@ export default function Orders() {
 
     const fetchOrders = async () => {
       setLoading(true);
+
       try {
         const { data } = await api.get(`${API}/api/order/my`, {
-          headers: { Authorization: `Bearer ${user.token}` },
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
         });
 
-        if (mounted) setOrders(data);
+        if (mounted) {
+          /*
+           * Backend response:
+           * {
+           *   success: true,
+           *   orders: [...]
+           * }
+           *
+           * We need only the orders array.
+           */
+          setOrders(
+            Array.isArray(data?.orders)
+              ? data.orders
+              : []
+          );
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Fetch orders error:", err);
+
+        if (mounted) {
+          setOrders([]);
+        }
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchOrders();
 
-    const socket = io(`${API}`, { transports: ["websocket"] });
+    // ================= SOCKET =================
+    const socket = io(API, {
+      transports: ["websocket"],
+    });
+
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      socket.emit("joinRoom", user._id?.toString?.() || user._id);
+      const userId =
+        user?._id?.toString?.() || user?._id;
+
+      if (userId) {
+        socket.emit("joinRoom", userId);
+      }
     });
 
     socket.on("orderUpdated", (updatedOrder) => {
-      setOrders((prev) =>
-        prev.map((o) =>
-          o._id === updatedOrder._id ? updatedOrder : o
-        )
-      );
+      if (!updatedOrder?._id) return;
+
+      setOrders((prev) => {
+        const exists = prev.some(
+          (o) => o._id === updatedOrder._id
+        );
+
+        if (exists) {
+          return prev.map((o) =>
+            o._id === updatedOrder._id
+              ? updatedOrder
+              : o
+          );
+        }
+
+        /*
+         * If this is a newly created order,
+         * add it to the beginning.
+         */
+        return [updatedOrder, ...prev];
+      });
 
       if (updatedOrder.status === "Delivered") {
         toast.success("🎉 Order delivered!");
@@ -76,14 +131,20 @@ export default function Orders() {
 
     return () => {
       mounted = false;
-      socketRef.current?.disconnect();
-    };
-  }, [user, authLoading]);
 
+      socket.off("connect");
+      socket.off("orderUpdated");
+
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [user, authLoading, API]);
+
+  // ================= REORDER =================
   const handleConfirmReorder = () => {
     if (!selectedOrder) return;
 
-    selectedOrder.items.forEach((i) => {
+    selectedOrder.items?.forEach((i) => {
       if (i.menuItem) {
         addToCart({
           _id: i.menuItem._id,
@@ -96,20 +157,29 @@ export default function Orders() {
     });
 
     toast.success("Items added to cart 🚀");
+
     setSelectedOrder(null);
+
     router.push("/cart");
   };
 
-  if (authLoading || loading) return <OrderLoading />;
+  // ================= LOADING =================
+  if (authLoading || loading) {
+    return <OrderLoading />;
+  }
 
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
+  // ================= UI =================
   return (
     <main className="relative min-h-screen bg-white dark:bg-[#0b0f19] overflow-hidden">
 
       {/* Background Glow */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute top-[-120px] left-[-120px] w-72 h-72 bg-orange-500/20 blur-3xl rounded-full" />
+
         <div className="absolute bottom-[-120px] right-[-120px] w-72 h-72 bg-green-500/20 blur-3xl rounded-full" />
       </div>
 
@@ -132,33 +202,42 @@ export default function Orders() {
 
         {/* EMPTY STATE */}
         {orders.length === 0 ? (
-          <div className="
-            text-center py-24
-            border border-gray-200 dark:border-white/10
-            bg-white/70 dark:bg-white/[0.03]
-            backdrop-blur-2xl
-            rounded-3xl
-          ">
-            <div className="text-6xl mb-4">🍽️</div>
+          <div
+            className="
+              text-center py-24
+              border border-gray-200 dark:border-white/10
+              bg-white/70 dark:bg-white/[0.03]
+              backdrop-blur-2xl
+              rounded-3xl
+            "
+          >
+            <div className="text-6xl mb-4">
+              🍽️
+            </div>
+
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               No Orders Yet
             </h2>
+
             <p className="text-gray-500 dark:text-gray-400 mt-2">
               Start ordering your favorite meals
             </p>
 
             <button
-              onClick={() => router.push("/menu")}
+              onClick={() => router.push("/food")}
               className="
                 mt-6 px-6 py-3
                 rounded-2xl
                 text-white
-                bg-gradient-to-r from-orange-500 to-green-500
-                hover:scale-105 active:scale-95
+                bg-gradient-to-r
+                from-orange-500
+                to-green-500
+                hover:scale-105
+                active:scale-95
                 transition
               "
             >
-              Explore Menu
+              Explore Food
             </button>
           </div>
         ) : (
@@ -168,18 +247,22 @@ export default function Orders() {
               <OrderCard
                 key={order._id}
                 order={order}
-                onReorder={(o) => setSelectedOrder(o)}
+                onReorder={(o) =>
+                  setSelectedOrder(o)
+                }
               />
             ))}
           </div>
         )}
 
-        {/* MODAL */}
+        {/* REORDER MODAL */}
         {selectedOrder && (
           <ReorderModal
             order={selectedOrder}
             setOrder={setSelectedOrder}
-            onClose={() => setSelectedOrder(null)}
+            onClose={() =>
+              setSelectedOrder(null)
+            }
             onConfirm={handleConfirmReorder}
           />
         )}

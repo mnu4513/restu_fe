@@ -16,7 +16,10 @@ export default function AdminOrders() {
   const { user } = useContext(AuthContext);
 
   const [orders, setOrders] = useState([]);
+  const [deliveryPersons, setDeliveryPersons] = useState([]);
+
   const [loading, setLoading] = useState(true);
+  const [deliveryLoading, setDeliveryLoading] = useState(true);
 
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
@@ -44,15 +47,19 @@ export default function AdminOrders() {
         const { data } = await api.get(
           `${API}/api/admin/orders?page=${page}&limit=20&search=${q}&t=${Date.now()}`,
           {
-            headers: { Authorization: `Bearer ${user.token}` },
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+            },
           }
         );
 
         setOrders(data.orders || []);
         setPages(data.pages || 1);
       } catch (err) {
-        console.error(err);
-        toast.error("Failed to load orders");
+        console.error("Fetch orders error:", err);
+        toast.error(
+          err?.response?.data?.message || "Failed to load orders"
+        );
       } finally {
         setLoading(false);
       }
@@ -63,6 +70,58 @@ export default function AdminOrders() {
   useEffect(() => {
     fetchOrders(lastSearch);
   }, [fetchOrders, page, lastSearch]);
+
+  // ================= FETCH DELIVERY PERSONS =================
+  const fetchDeliveryPersons = useCallback(async () => {
+    if (!user || user.role !== "admin") return;
+
+    setDeliveryLoading(true);
+
+    try {
+      const { data } = await api.get(
+        `${API}/api/admin/users?t=${Date.now()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      /*
+       * Admin users API may return:
+       * { users: [...] }
+       *
+       * Keep this defensive so the UI doesn't break
+       * if the API response contains another wrapper.
+       */
+      const users = Array.isArray(data?.users)
+        ? data.users
+        : Array.isArray(data)
+        ? data
+        : [];
+
+      const deliveryUsers = users.filter(
+        (u) => u?.role === "delivery"
+      );
+
+      setDeliveryPersons(deliveryUsers);
+    } catch (err) {
+      console.error("Fetch delivery persons error:", err);
+
+      toast.error(
+        err?.response?.data?.message ||
+          "Failed to load delivery persons"
+      );
+
+      setDeliveryPersons([]);
+    } finally {
+      setDeliveryLoading(false);
+    }
+  }, [user, API]);
+
+  useEffect(() => {
+    fetchDeliveryPersons();
+  }, [fetchDeliveryPersons]);
 
   // ================= SEARCH =================
   const handleSearchSubmit = (value) => {
@@ -76,23 +135,35 @@ export default function AdminOrders() {
     if (!user || user.role !== "admin") return;
 
     const socketInstance = io(API, {
-      auth: { token: user.token },
+      auth: {
+        token: user.token,
+      },
     });
 
     const onOrderUpdated = (updatedOrder) => {
+      if (!updatedOrder?._id) return;
+
       setOrders((prev) => {
-        const exists = prev.find((o) => o._id === updatedOrder._id);
+        const exists = prev.find(
+          (o) => o._id === updatedOrder._id
+        );
 
         if (exists) {
           return prev.map((o) =>
-            o._id === updatedOrder._id ? updatedOrder : o
+            o._id === updatedOrder._id
+              ? updatedOrder
+              : o
           );
-        } else {
-          const audio = new Audio("/sounds/ding.mp3");
-          audio.play().catch(() => {});
-          toast.success(`📦 New Order ${updatedOrder._id.slice(-5)}`);
-          return [updatedOrder, ...prev];
         }
+
+        const audio = new Audio("/sounds/ding.mp3");
+        audio.play().catch(() => {});
+
+        toast.success(
+          `📦 New Order ${updatedOrder._id.slice(-5)}`
+        );
+
+        return [updatedOrder, ...prev];
       });
     };
 
@@ -110,17 +181,71 @@ export default function AdminOrders() {
       const { data } = await api.put(
         `${API}/api/admin/${orderId}/status`,
         { status },
-        { headers: { Authorization: `Bearer ${user.token}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
       );
 
       toast.success("Order updated");
 
       setOrders((prev) =>
-        prev.map((o) => (o._id === orderId ? data.order : o))
+        prev.map((o) =>
+          o._id === orderId ? data.order : o
+        )
       );
     } catch (err) {
-      console.error(err);
-      toast.error("Error updating order");
+      console.error("Update status error:", err);
+
+      toast.error(
+        err?.response?.data?.message ||
+          "Error updating order"
+      );
+    }
+  };
+
+  // ================= ASSIGN DELIVERY =================
+  const assignDeliveryPerson = async (
+    orderId,
+    deliveryPersonId
+  ) => {
+    if (!deliveryPersonId) {
+      toast.error("Please select a delivery person");
+      return;
+    }
+
+    try {
+      const { data } = await api.put(
+        `${API}/api/admin/orders/${orderId}/assign-delivery`,
+        {
+          deliveryPersonId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      toast.success(
+        "Delivery person assigned successfully"
+      );
+
+      if (data?.order) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o._id === orderId ? data.order : o
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Assign delivery error:", err);
+
+      toast.error(
+        err?.response?.data?.message ||
+          "Failed to assign delivery person"
+      );
     }
   };
 
@@ -175,6 +300,9 @@ export default function AdminOrders() {
                   key={order._id}
                   order={order}
                   onUpdateStatus={updateStatus}
+                  deliveryPersons={deliveryPersons}
+                  deliveryLoading={deliveryLoading}
+                  onAssignDelivery={assignDeliveryPerson}
                 />
               ))}
             </div>
@@ -190,7 +318,11 @@ export default function AdminOrders() {
             rounded-2xl p-4
           "
         >
-          <AdminPagination page={page} pages={pages} setPage={setPage} />
+          <AdminPagination
+            page={page}
+            pages={pages}
+            setPage={setPage}
+          />
         </div>
 
       </div>
