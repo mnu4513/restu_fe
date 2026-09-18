@@ -312,9 +312,9 @@ export default function Food() {
                   rounded-[40px]
                   border border-gray-200 dark:border-white/10
                   bg-gradient-to-br
-                  from-orange-500
-                  via-orange-400
-                  to-green-500
+                  from-blue-500
+                  via-green-400
+                  to-blue-500
                   p-8 sm:p-12
                   shadow-2xl
                 "

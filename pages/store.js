@@ -196,7 +196,8 @@ export default function Store() {
                   px-7 py-4
                   rounded-2xl
                   border border-gray-200 dark:border-white/10
-                  bg-white dark:bg-white/[0.03]
+                  bg-white
+                  dark:bg-white/[0.03]
                   text-gray-900 dark:text-white
                   font-semibold
                   hover:scale-105
@@ -312,9 +313,9 @@ export default function Store() {
                   rounded-[40px]
                   border border-gray-200 dark:border-white/10
                   bg-gradient-to-br
-                  from-green-500
+                  from-blue-300
                   via-green-400
-                  to-orange-500
+                  to-blue-300
                   p-8 sm:p-12
                   shadow-2xl
                 "
