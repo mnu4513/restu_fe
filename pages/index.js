@@ -176,7 +176,8 @@ export default function Home() {
                   className="
                     block
                     bg-gradient-to-r
-                    from-orange-500
+                    from-red-500
+                    via-blue-400
                     to-green-500
                     bg-clip-text
                     text-transparent
@@ -220,7 +221,8 @@ export default function Home() {
                   px-7 py-4
                   rounded-2xl
                   bg-gradient-to-r
-                  from-orange-500
+                
+                  from-blue-400
                   to-green-500
                   text-white
                   font-semibold
@@ -247,7 +249,7 @@ export default function Home() {
                 />
 
                 <span className="relative z-10 flex items-center gap-2">
-                  Explore Food Menu →
+                  🍔 Explore Food Menu →
                 </span>
 
               </Link>
@@ -317,7 +319,7 @@ export default function Home() {
 
                     {/* View All Food */}
                     <Link
-                      href="/menu?category=food"
+                      href="/food"
                       className="
                         inline-flex items-center
                         text-sm font-semibold
@@ -412,7 +414,7 @@ export default function Home() {
 
                     {/* View All Store */}
                     <Link
-                      href="/menu?category=store"
+                      href="/store"
                       className="
                         inline-flex items-center
                         text-sm font-semibold
@@ -520,9 +522,10 @@ export default function Home() {
                     rounded-[40px]
                     border border-gray-200 dark:border-white/10
                     bg-gradient-to-br
-                    from-orange-500
-                    via-orange-400
-                    to-green-500
+                    from-blue-500
+                    
+                    via-green-400
+                    to-blue-500
                     p-8 sm:p-12
                     shadow-2xl
                   "
@@ -568,7 +571,7 @@ export default function Home() {
 
 
                     <Link
-                      href="/menu"
+                      href="/store"
                       className="
                         group inline-flex items-center justify-center
                         mt-8
@@ -585,7 +588,7 @@ export default function Home() {
                     >
 
                       <span className="flex items-center gap-2">
-                        Browse Food & Store 🛍️
+                        Browse Store 🛍️
                       </span>
 
                     </Link>

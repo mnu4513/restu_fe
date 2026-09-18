@@ -69,8 +69,8 @@ export default function Hero() {
               transition={{ delay: 0.3 }}
             >
               Delicious Food
-              <span className="block bg-gradient-to-r from-orange-500 to-green-500 bg-clip-text text-transparent">
-                Delivered Fresh
+              <span className="block bg-gradient-to-r from-blue-500 via-orange-400 to-blue-500 bg-clip-text text-transparent">
+                Premium Store
               </span>
             </motion.h1>
 
@@ -93,17 +93,17 @@ export default function Hero() {
               transition={{ delay: 0.7 }}
             >
               <Link
-                href="/menu"
-                className="w-full sm:w-auto text-center px-7 py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-green-500 text-white font-semibold shadow-xl hover:scale-105 active:scale-95 transition duration-300"
+                href="/food"
+                className="w-full sm:w-auto text-center px-7 py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-green-400  text-white font-semibold shadow-xl hover:scale-105 active:scale-95 transition duration-300"
               >
-                Explore Menu
+                🍔 Explore Food
               </Link>
 
               <Link
-                href="/reservation"
-                className="w-full sm:w-auto text-center px-7 py-4 rounded-2xl border border-gray-300 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl text-gray-900 dark:text-white hover:bg-white dark:hover:bg-white/10 transition duration-300"
+                href="/store"
+                className="w-full sm:w-auto text-center px-7 py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-green-400  text-white font-semibold shadow-xl hover:scale-105 active:scale-95 transition duration-300"
               >
-                Book Table
+                🛒 Visit Store
               </Link>
             </motion.div>
 
@@ -140,7 +140,7 @@ export default function Hero() {
             className="relative flex justify-center"
           >
             {/* Glow */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/20 to-green-500/20 blur-3xl rounded-full" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/20  to-green-500/20 blur-3xl rounded-full" />
 
             {/* Main Image */}
             <motion.div

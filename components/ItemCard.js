@@ -162,7 +162,7 @@ export default function ItemCard({ item }) {
                 h-12 w-12
                 rounded-2xl
                 bg-gradient-to-r
-                from-orange-500
+                from-blue-500
                 to-green-500
                 text-white
                 text-xl
@@ -231,11 +231,14 @@ export default function ItemCard({ item }) {
               className="
                 flex-1
                 py-3 rounded-2xl
-                border border-gray-200 dark:border-white/10
-                bg-gray-50 dark:bg-white/[0.03]
+               
+                bg-gradient-to-r
+                  from-green-500
+                  to-red-300
+                  
                 hover:bg-gray-100 dark:hover:bg-white/[0.06]
-                text-sm font-medium
-                text-gray-800 dark:text-white
+                text-sm font-bold
+text-white
                 transition-all duration-300
               "
             >
@@ -250,7 +253,7 @@ export default function ItemCard({ item }) {
                   flex-1
                   py-3 rounded-2xl
                   bg-gradient-to-r
-                  from-orange-500
+                  from-blue-500
                   to-green-500
                   text-white
                   text-sm font-semibold
@@ -356,9 +359,10 @@ export default function ItemCard({ item }) {
                     onClick={() => setOpen(false)}
                     className="
                       px-5 py-3 rounded-2xl
-                      border border-gray-200 dark:border-white/10
-                      bg-gray-100 dark:bg-white/[0.05]
-                      text-gray-800 dark:text-white
+                      bg-gradient-to-r
+                        from-blue-500
+                        to-red-500
+                        text-white font-semibold
                       hover:bg-gray-200 dark:hover:bg-white/[0.08]
                       transition
                     "
@@ -375,7 +379,7 @@ export default function ItemCard({ item }) {
                       className="
                         px-6 py-3 rounded-2xl
                         bg-gradient-to-r
-                        from-orange-500
+                        from-blue-500
                         to-green-500
                         text-white font-semibold
                         shadow-lg shadow-orange-500/20
